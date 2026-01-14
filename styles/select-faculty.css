@@ -1,0 +1,166 @@
+body {
+  font-family: "Tahoma", sans-serif;
+  margin: 0;
+  padding: 0;
+
+  /* พื้นหลัง */
+  background-image: url("../images/DSC_0694.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;   /* อยู่กลางแนวตั้ง */
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* กล่องหลัก */
+.container {
+  background-color: #ffffff;
+  border: 5px solid #FFD700;
+  border-radius: 24px;
+  padding: 60px 36px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  text-align: center;
+  margin-top: -1px;
+  height: 580px;
+}
+
+/* โลโก้โรงเรียน */
+.school-logo {
+  width: 220px;
+  height: auto;
+  margin-bottom: 32px;
+}
+
+/* หัวข้อ */
+h1 {
+  font-size: 38px;
+  color: #003366;
+  margin-bottom: 50px;
+  line-height: 1.6;
+}
+
+/* ปุ่มเลือกคณะ */
+.faculty-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.faculty-button {
+  width: 100%;
+  padding: 30px;
+  background: #FFD700;
+  color: #003366;
+  border: none;
+  border-radius: 60px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.3s, color 0.3s;
+  box-shadow: 0 10px 14px rgba(0,0,0,0.35);
+}
+
+.faculty-button:hover {
+  transform: scale(1.12);
+  background: #003366;
+  color: #FFD700;
+}
+button.back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 10px 16px;
+  background-color: #003366;
+  color: #FFD700;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: background-color 0.3s, color 0.3s;
+  margin-top: 650px;
+}
+
+/* ✅ Responsive สำหรับ Tablet */
+@media (max-width: 768px) {
+  .container {
+    max-width: 95%;
+    padding: 50px 28px;
+    margin-top: -20px;
+    height: auto;             /* ปรับความสูงอัตโนมัติ */
+  }
+
+  .school-logo {
+    width: 180px;
+  }
+
+  h1 {
+    font-size: 32px;
+  }
+
+  .faculty-button {
+    font-size: 22px;
+    padding: 20px;
+    border-radius: 40px;
+  }
+
+  .faculty-buttons {
+    gap: 28px;
+  }
+}
+
+/* ✅ Responsive สำหรับมือถือเล็ก */
+@media (max-width: 480px) {
+  .container {
+    padding: 40px 20px;       /* ลด padding รอบกล่อง */
+    height: auto;             /* ไม่บังคับความสูง */
+  }
+
+  .school-logo {
+    width: 140px;             /* โลโก้เล็กลง */
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    font-size: 24px;          /* หัวข้อเล็กลง */
+    margin-bottom: 30px;
+  }
+
+  .faculty-button {
+    font-size: 18px;          /* ขนาดตัวอักษรพอดีมือถือ */
+    padding: 16px;            /* ปุ่มไม่ใหญ่เกินไป */
+    border-radius: 24px;      /* มุมโค้งน้อยลง */
+  }
+
+  .faculty-buttons {
+    gap: 24px;                /* ลดช่องว่างระหว่างปุ่ม */
+  }
+}
+
+/* ✅ ปรับเฉพาะ Desktop จอใหญ่ */
+@media (min-width: 1024px) {
+  .school-logo {
+    width: 160px;   /* โลโก้เล็กลง */
+  }
+
+  h1 {
+    font-size: 24px;   /* ลดหัวข้อให้เล็กลงมาก */
+    margin-bottom: 30px;
+  }
+
+  .faculty-button {
+    font-size: 16px;   /* ลดตัวอักษรปุ่มลงเยอะ */
+    padding: 12px;     /* ลด padding ให้เล็กมาก */
+    max-width: 220px;  /* จำกัดความกว้างปุ่มให้เล็กลง */
+    margin: 0 auto;    /* จัดให้อยู่ตรงกลาง */
+    border-radius: 30px;
+  }
+}

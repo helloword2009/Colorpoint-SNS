@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>รายงานคะแนนคณะสี</title>
+  <!-- เรียกใช้ CSS สำหรับรายงาน -->
+  <link rel="stylesheet" href="styles/report.css">
+  <style>
+    @media print {
+      .print-btn {
+        display: none; /* ซ่อนปุ่มตอนพิมพ์ */
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>รายงานคะแนนคณะสี โรงเรียนสตรีนครสวรรค์</h1>
+    <p>วันที่พิมพ์: <span id="printDate"></span></p>
+  </header>
+
+  <!-- ✅ ปุ่มพิมพ์รายงาน -->
+  <button class="print-btn" onclick="window.print()">พิมพ์รายงาน</button>
+
+  <div id="reportContainer"></div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script>
+    // ใส่วันที่พิมพ์
+    document.getElementById("printDate").innerText = new Date().toLocaleDateString("th-TH");
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDwmeumgDSVlspe7gIcF6rVbe-hBye7Q3I",
+      authDomain: "school-scores-8e9eb.firebaseapp.com",
+      databaseURL: "https://school-scores-8e9eb-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "school-scores-8e9eb",
+      storageBucket: "school-scores-8e9eb.firebasestorage.app",
+      messagingSenderId: "416720346956",
+      appId: "1:416720346956:web:b20e84af0b635b374279e9",
+      measurementId: "G-DD7E1RFNC1"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const types = ["คะแนนมาสาย", "คะแนนการเข้าแถว", "คะแนนความสะอาด"];
+    const container = document.getElementById("reportContainer");
+
+    db.ref("scores").once("value", (snapshot) => {
+      const data = snapshot.val() || {};
+      const allItems = Object.values(data);
+
+      types.forEach(type => {
+        const filtered = allItems.filter(item => item.type === type);
+        let total = filtered.reduce((sum, item) => sum + item.value, 0);
+
+        const section = document.createElement("section");
+        section.innerHTML = `
+          <h2>${type} (รวม ${total} คะแนน)</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>เวลา</th>
+                <th>คณะสี</th>
+                <th>ห้องเรียน</th>
+                <th>คะแนน</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filtered.map(item => `
+                <tr class="faculty-${item.faculty}">
+                  <td>${item.time}</td>
+                  <td>${item.faculty}</td>
+                  <td>${item.classroom}</td>
+                  <td>${item.value}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+        container.appendChild(section);
+      });
+
+      const grandTotal = allItems.reduce((sum, item) => sum + item.value, 0);
+      const summary = document.createElement("h2");
+      summary.innerText = "คะแนนรวมทั้งหมด: " + grandTotal + " คะแนน";
+      container.appendChild(summary);
+    });
+  </script>
+</body>
+</html>

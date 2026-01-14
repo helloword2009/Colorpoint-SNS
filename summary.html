@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>สรุปผลคณะยอดเยี่ยมประจำสัปดาห์</title>
+  <link rel="stylesheet" href="styles/summary.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <header>
+    <h1>สรุปผลคณะยอดเยี่ยมประจำสัปดาห์</h1>
+  </header>
+
+  <main>
+    <div id="winnerBox" class="winner-box"></div>
+
+    <table id="summaryTable">
+      <thead>
+        <tr>
+          <th>คณะสี</th>
+          <th>คะแนนรวม</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+
+  <footer>
+    <p>© โรงเรียนสตรีนครสวรรค์ | <a href="report.html">พิมพ์รายงาน</a></p>
+  </footer>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDwmeumgDSVlspe7gIcF6rVbe-hBye7Q3I",
+    authDomain: "school-scores-8e9eb.firebaseapp.com",
+    databaseURL: "https://school-scores-8e9eb-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "school-scores-8e9eb",
+    storageBucket: "school-scores-8e9eb.firebasestorage.app",
+    messagingSenderId: "416720346956",
+    appId: "1:416720346956:web:b20e84af0b635b374279e9",
+    measurementId: "G-DD7E1RFNC1"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const FACULTIES = ["มาลัยพิรุณ","ไพจิตเวหาส","โอภาสรวี","จันทราอำไพ","รัศมีดารา"];
+
+  const CLASSROOMS = {
+    "มาลัยพิรุณ": ["1/4","1/9","2/5","2/10","3/1","3/6","3/11","4/1","4/6","4/11","5/2","5/12","6/2","6/7","6/12"],
+    "ไพจิตเวหาส": ["1/5","1/10","2/1","2/6","2/11","3/2","3/7","3/12","4/2","4/12","5/3","5/8","6/3","6/8","6/11"],
+    "โอภาสรวี": ["1/1","1/6","1/11","2/2","2/7","3/3","3/8","4/3","4/8","4/13","5/4","5/9","5/11","6/4","6/9"],
+    "จันทราอำไพ": ["1/3","1/8","1/13","2/4","2/9","3/5","3/10","4/5","4/7","4/10","5/1","5/6","6/5","6/6","6/13"],
+    "รัศมีดารา": ["1/2","1/7","1/12","2/3","2/8","2/13","3/4","3/9","4/4","4/9","5/5","5/7","5/10","5/13","6/1","6/10"]
+  };
+
+  const TYPE_LATE = "คะแนนมาสาย";
+  const TYPE_LINEUP = "คะแนนการเข้าแถว";
+  const TYPE_CLEAN = "คะแนนความสะอาด";
+  const LATE_RANK_SCORES = [9, 8, 7, 6, 5];
+
+  // =========================================================
+  // ✅ [เพิ่มใหม่] ส่วนรีเซ็ตสัปดาห์แบบ "วันอาทิตย์ 00:00"
+  // แนวคิด: ถ้ามีคนเปิดเว็บ แล้วพบว่าสัปดาห์เปลี่ยน -> ย้ายไป history + ล้าง scores
+  // =========================================================
+
+  // หา timestamp ของ "วันอาทิตย์ 00:00" ของสัปดาห์ปัจจุบัน (ตามเครื่องผู้ใช้)
+  function getSundayStartMs(now = new Date()) {
+    const d = new Date(now);
+    const day = d.getDay(); // 0 = อาทิตย์
+    d.setDate(d.getDate() - day);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+
+  // ทำ key สำหรับเก็บ history (กันชนกัน)
+  function makeHistoryKey() {
+    const pad = (n) => String(n).padStart(2, "0");
+    const d = new Date();
+    // รูปแบบ: 2026-01-14_18-20-59 (เวลาไทยตามเครื่อง)
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+  }
+
+  async function weeklyResetIfNeeded() {
+    const currentWeekStart = getSundayStartMs();
+
+    const weekStartRef = db.ref("meta/weekStart");
+
+    // ✅ ใช้ transaction ป้องกันหลายคนเปิดพร้อมกันแล้วรีซ้ำ
+    const tx = await weekStartRef.transaction((saved) => {
+      // ถ้ายังไม่เคยตั้งค่า -> เซ็ตเลย (ยังไม่ล้างคะแนน)
+      if (!saved) return currentWeekStart;
+
+      // ถ้าเป็นสัปดาห์เดิม -> ไม่ต้องทำอะไร (คืนค่าเดิม)
+      if (saved === currentWeekStart) return;
+
+      // ถ้าสัปดาห์เปลี่ยน -> ตั้งค่าใหม่ (สัญญาณว่า "คนนี้เป็นคนแรกของสัปดาห์")
+      return currentWeekStart;
+    });
+
+    // ถ้า transaction ไม่สำเร็จ (เช่น offline) ให้ไม่ทำอะไรเพื่อความปลอดภัย
+    if (!tx.committed) return;
+
+    const previousWeekStart = tx.snapshot.val();
+    // หมายเหตุ: tx.snapshot.val() หลัง committed จะเป็น "ค่าปัจจุบัน" แล้ว
+    // ดังนั้นเราจะเช็กด้วยวิธีอีกแบบ: ถ้าใน DB ก่อนหน้าไม่เท่ากับ currentWeekStart จึงค่อยรี
+    // เราใช้ localStorage ช่วยกันซ้ำบนเครื่องเดียว (เสริมความปลอดภัย)
+    const localKey = "lastWeekStartSeen";
+    const lastSeen = Number(localStorage.getItem(localKey) || 0);
+
+    // ถ้าเครื่องนี้เคยเห็น weekStart เท่านี้แล้ว -> ไม่ต้องรีอีก
+    if (lastSeen === currentWeekStart) return;
+
+    // อัปเดต lastSeen ก่อน (กันรีซ้ำถ้าเน็ตกระตุก)
+    localStorage.setItem(localKey, String(currentWeekStart));
+
+    // ตอนนี้เราจะตรวจค่าจริงใน DB อีกครั้งเพื่อความชัวร์
+    const confirmSnap = await weekStartRef.get();
+    const confirmVal = confirmSnap.val();
+
+    // ถ้า confirmVal เป็นสัปดาห์ปัจจุบัน แปลว่า weekStart ถูกอัปเดตแล้ว
+    // ให้เรารีเฉพาะกรณีที่ "สัปดาห์เพิ่งเปลี่ยนจริง"
+    // วิธีเช็ก: ดู flag ใน meta/lastResetAt ว่าตรงกับสัปดาห์นี้หรือยัง
+    const resetFlagRef = db.ref("meta/lastResetWeekStart");
+    const flagSnap = await resetFlagRef.get();
+    const lastResetWeekStart = flagSnap.val();
+
+    if (lastResetWeekStart === currentWeekStart) {
+      // มีคนรีไปแล้วในสัปดาห์นี้
+      return;
+    }
+
+    // ✅ ดึง scores ก่อนล้าง
+    const scoresSnap = await db.ref("scores").get();
+    const scoresData = scoresSnap.val() || {};
+
+    // ถ้ามีข้อมูลค่อยย้ายไป history (ถ้าว่างก็แค่ล้าง/ตั้ง flag)
+    const historyKey = makeHistoryKey();
+    await db.ref(`scores_history/${historyKey}`).set({
+      weekStart: currentWeekStart,
+      movedAt: Date.now(),
+      scores: scoresData
+    });
+
+    // ✅ ล้างคะแนนสัปดาห์ใหม่
+    await db.ref("scores").remove();
+
+    // ✅ ตั้ง flag ว่ารีสัปดาห์นี้แล้ว (กันรีซ้ำแม้หลายเครื่อง)
+    await resetFlagRef.set(currentWeekStart);
+
+    // (ไม่บังคับ) แจ้งเตือนเล็กน้อยให้ครูรู้ว่ารีแล้ว
+    console.log("✅ รีสัปดาห์ใหม่เรียบร้อย (เริ่มวันอาทิตย์ 00:00)");
+  }
+
+  // =========================================================
+  // ✅ [เพิ่มใหม่] เรียกรีเซ็ตทันทีตอนเปิดหน้า summary
+  // ตำแหน่งนี้สำคัญ: ให้อยู่ "ก่อน" db.ref('scores').on(...)
+  // =========================================================
+  weeklyResetIfNeeded().catch(err => console.error("weeklyResetIfNeeded error:", err));
+
+  // =========================================================
+  // 🔻 โค้ดเดิม
+  // =========================================================
+  db.ref("scores").on("value", (snapshot) => {
+    const data = snapshot.val() || {};
+
+    const totals = {};
+    const lateCounts = {};
+    const lateHasData = {};
+    const lineupTotals = {};
+    const cleanTotals = {};
+
+    FACULTIES.forEach(f => {
+      totals[f] = 0;
+      lateCounts[f] = 0;
+      lateHasData[f] = false;
+      lineupTotals[f] = 0;
+      cleanTotals[f] = 0;
+    });
+
+    for (const key in data) {
+      const item = data[key] || {};
+      const faculty = (item.faculty || "").trim();
+      if (!FACULTIES.includes(faculty)) continue;
+
+      const val = Number(item.value) || 0;
+
+      if (item.type === TYPE_LATE) {
+        lateCounts[faculty] += val;
+        lateHasData[faculty] = true;
+      } else if (item.type === TYPE_LINEUP) {
+        lineupTotals[faculty] += val;
+      } else if (item.type === TYPE_CLEAN) {
+        cleanTotals[faculty] += val;
+      }
+    }
+
+    // รวมคะแนนเข้าแถว + ความสะอาดเฉลี่ยตามจำนวนห้อง
+    FACULTIES.forEach(f => {
+      totals[f] += lineupTotals[f];
+      const roomCount = CLASSROOMS[f]?.length || 0;
+      totals[f] += roomCount > 0 ? (cleanTotals[f] / roomCount) : 0;
+    });
+
+    // จัดอันดับมาสาย: คณะที่ไม่มีข้อมูล => Infinity (ไปท้ายสุด)
+    const sortedByLate = FACULTIES
+      .map(f => [f, lateHasData[f] ? lateCounts[f] : Number.POSITIVE_INFINITY])
+      .sort((a, b) => a[1] - b[1]);
+
+// ✅ ถ้ายังไม่มีข้อมูลมาสายเลยทั้งสัปดาห์นี้ -> ไม่ต้องแจกคะแนนมาสาย
+const hasAnyLateData = FACULTIES.some(f => lateHasData[f] === true);
+
+if (hasAnyLateData) {
+  // แจกคะแนนมาสายตามอันดับ (น้อยดีกว่า)
+  sortedByLate.forEach(([f], idx) => {
+    const lateScore = LATE_RANK_SCORES[Math.min(idx, LATE_RANK_SCORES.length - 1)];
+    totals[f] += lateScore;
+  });
+} else {
+  // ยังไม่มีใครบันทึกมาสาย -> ให้คะแนนมาสาย = 0 ทุกคณะ (เพื่อไม่ให้ดูเหมือน "ไม่รี")
+  // totals ไม่ต้องบวกอะไรเพิ่ม
+}
+
+
+    // หา winner
+    let winner = null;
+    let maxScore = -Infinity;
+    FACULTIES.forEach(f => {
+      if (totals[f] > maxScore) {
+        maxScore = totals[f];
+        winner = f;
+      }
+    });
+
+    const winnerBox = document.getElementById("winnerBox");
+    if (winner && isFinite(maxScore)) {
+      winnerBox.innerHTML = `🏆 <strong>${winner}</strong> ได้เป็นคณะยอดเยี่ยมประจำสัปดาห์ ด้วยคะแนนรวม ${maxScore.toFixed(2)} คะแนน`;
+    } else {
+      winnerBox.innerHTML = "ยังไม่มีข้อมูลคะแนนในสัปดาห์นี้";
+    }
+
+    // เติมตาราง
+    const tbody = document.querySelector("#summaryTable tbody");
+    tbody.innerHTML = "";
+    FACULTIES.forEach(f => {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${f}</td><td>${(totals[f] || 0).toFixed(2)}</td>`;
+      tbody.appendChild(row);
+    });
+  });
+</script>
+
+</body>
+</html>
