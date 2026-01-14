@@ -5,8 +5,8 @@
   <title>เลือกคณะสี</title>
   <link rel="stylesheet" href="styles/select-faculty.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 </head>
+
 <body>
   <div class="container">
     <img src="./images/logo.jpg" alt="ตราโรงเรียน" class="school-logo">
@@ -19,6 +19,9 @@
       <button class="faculty-button" onclick="goToScore('จันทราอำไพ')">จันทราอำไพ</button>
       <button class="faculty-button" onclick="goToScore('มาลัยพิรุณ')">มาลัยพิรุณ</button>
     </div>
+
+    <!-- ✅ ย้ายปุ่มกลับมาไว้ในกล่อง -->
+    <button class="back-button" onclick="window.location='role.html'">← กลับสู่หน้าหลัก</button>
   </div>
 
   <script>
@@ -26,6 +29,5 @@
       window.location = `faculty-score.html?faculty=${encodeURIComponent(facultyName)}`;
     }
   </script>
-  <button class="back-button" onclick="window.location='role.html'">กลับสู่หน้าหลัก</button>
 </body>
 </html>
