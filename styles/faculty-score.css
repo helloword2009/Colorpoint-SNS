@@ -1,273 +1,267 @@
+* { box-sizing: border-box; }
+
 body {
   font-family: "Tahoma", sans-serif;
   margin: 0;
   padding: 0;
 
-  /* ✅ ใช้หลาย background พร้อมกัน */
-  background: url("../images/DSC_0694.jpg") center/cover no-repeat fixed;
+  /* ✅ ภาพพื้นหลัง */
+  background: url("../images/DSC_0694.jpg") center/cover no-repeat;
+  /* ✅ มือถือบางรุ่น fixed กระตุก -> ให้ใช้เฉพาะจอใหญ่ */
+  background-attachment: scroll;
 
   text-align: center;
   color: #003366;
 
-  /* ✅ ให้ ::before อ้างอิงได้ */
   position: relative;
   min-height: 100vh;
 }
 
-/* เพิ่มเลเยอร์สีขาวทับภาพพื้นหลังเพื่อให้ข้อความอ่านง่ายขึ้น */
+/* ✅ เลเยอร์ขาวอ่านง่าย (แก้ z-index ให้ชัวร์) */
 body::before {
   content: "";
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(255,255,255,0.4);
-  z-index: -1;
+  position: fixed;      /* ครอบเต็มจอ */
+  inset: 0;
+  background: rgba(255,255,255,0.45);
+  z-index: 0;
+}
+
+/* ✅ ให้ทุกอย่างอยู่เหนือ overlay */
+header, main, footer, #imagePopup {
+  position: relative;
+  z-index: 1;
 }
 
 header {
   background-color: #003366;
   color: #FFD700;
-  padding: 20px;
+  padding: 14px 12px;
   text-align: center;
   box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+
+  /* ✅ sticky บนมือถือ อ่านหัวข้อได้ตลอด */
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
 h1 {
   margin: 0;
-  font-size: 26px;
+  font-size: 22px;
+  line-height: 1.25;
 }
 
 h2 {
-  font-size: 22px;
-  margin: 20px 0;
+  font-size: 18px;
+  margin: 14px 0 10px;
   text-align: center;
   color: #003366;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.25);
 }
+
 a {
-    color: #FFD700; /* ลิงก์เหลือง */
-    text-decoration: none;
+  color: #FFD700;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* ✅ คุมความกว้างให้พอดีทุกจอ */
+main {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 12px;
+}
+
+/* ✅ กล่องแต่ละส่วนให้เป็นการ์ด */
+section {
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(0,0,0,0.10);
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.10);
+  padding: 10px;
+  margin: 12px 0;
 }
 
 /* ตารางคะแนน */
 .table-wrapper {
   overflow-x: auto;
   width: 100%;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
 }
 
+/* ✅ สำคัญ: มือถือให้เลื่อนแนวนอนได้ ไม่บีบจนเละ */
 table {
   width: 100%;
-  max-width: 900px;
-  margin: 30px auto;
   border-collapse: collapse;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  min-width: 720px;     /* ทำให้เลื่อนข้างบนมือถือ */
   background: #fff;
 }
 
 th, td {
-  padding: 12px;
+  padding: 10px;
   text-align: center;
-  border: 1px solid #ddd;
+  border-bottom: 1px solid #e6e6e6;
+  font-size: 14px;
+  white-space: nowrap;  /* ลดการตัดบรรทัด */
 }
 
 th {
   background-color: #003366;
   color: #FFD700;
+  position: sticky; /* เวลาเลื่อนใน wrapper ยังเห็นหัวตาราง */
+  top: 0;
 }
 
 tr:nth-child(even) {
   background-color: #f9f9f9;
 }
 
-tr:hover {
-  background-color: #fffacd;
+/* ✅ hover เฉพาะจอที่มีเมาส์ */
+@media (hover:hover) {
+  tr:hover { background-color: #fffacd; }
 }
 
 /* รูปกิจกรรม */
 img.activity-img {
-  max-width: 80px;
-  border-radius: 6px;
+  width: 54px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 10px;
   border: 2px solid #FFD700;
   cursor: pointer;
-  transition: transform 0.2s;
 }
 
-img.activity-img:hover {
-  transform: scale(1.05);
+/* ✅ hover เฉพาะจอที่มีเมาส์ */
+@media (hover:hover) {
+  img.activity-img:hover { transform: scale(1.05); }
 }
+
+/* ปุ่มแก้ไขในตาราง */
+tbody button {
+  border: none;
+  background: #FFD700;
+  color: #003366;
+  font-weight: 800;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+tbody button:active { transform: scale(0.98); }
 
 /* กล่องสรุปคะแนน */
 .summary {
-  max-width: 900px;
-  margin: 40px auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center; /* ✅ จัดทุก card ให้อยู่ตรงกลาง */
+  max-width: 980px;
+  margin: 14px auto 6px;
+  display: grid;
+  grid-template-columns: 1fr; /* มือถือ 1 คอลัมน์ */
+  gap: 12px;
+  justify-content: center;
 }
 
 .summary-card {
   background: #ffffff;
   border: 2px solid #FFD700;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 14px;
+  padding: 14px;
   text-align: center;
   font-weight: bold;
   color: #003366;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  transition: transform 0.2s;
-  min-width: 220px;
-}
-
-.summary-card:hover {
-  transform: translateY(-5px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.10);
+  min-width: 0;
 }
 
 .summary-card h3 {
-  margin: 0 0 10px;
-  font-size: 18px;
+  margin: 0 0 6px;
+  font-size: 15px;
   color: #003366;
 }
 
 .summary-card p {
-  font-size: 22px;
+  font-size: 18px;
   margin: 0;
   color: #FFD700;
 }
 
-/* ✅ Card พิเศษสำหรับคะแนนรวม */
+/* ✅ คะแนนรวม */
 .summary-card.total {
   background: #003366;
   color: #FFD700;
   border: 3px solid #FFD700;
-  flex-basis: 100%;       /* ให้กินเต็มแถว */
-  max-width: 400px;       /* แต่จำกัดความกว้าง */
-  margin: 0 auto;         /* จัดให้อยู่ตรงกลาง */
 }
-
-.summary-card.total h3 {
-  color: #FFD700;
-}
-
+.summary-card.total h3 { color: #FFD700; }
 .summary-card.total p {
   color: #ffffff;
-  font-size: 26px;
+  font-size: 22px;
 }
 
 /* ปุ่มกลับ */
 .back-btn {
   display: block;
-  margin: 20px auto;
-  padding: 12px 25px;
-  background-color: #FFD700;
-  color: #003366;
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  transition: 0.3s;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.back-btn:hover {
+  width: 100%;
+  max-width: 980px;
+  margin: 14px auto 4px;
+  padding: 14px 14px;
   background-color: #003366;
   color: #FFD700;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.18);
 }
+.back-btn:active { transform: scale(0.99); }
 
 /* Footer */
 footer {
-  margin-top: 40px;
-  padding: 15px;
+  margin-top: 14px;
+  padding: 14px 12px;
   background-color: #003366;
   color: #FFD700;
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
-/* ✅ Responsive สำหรับ Tablet */
-@media (max-width: 768px) {
-  h1 {
-    font-size: 22px;
-  }
-
-  h2 {
-    font-size: 18px;
-  }
-
-  table {
-    font-size: 14px;
-    margin: 20px auto;
-  }
-
-  th, td {
-    padding: 8px;
-  }
-
-  img.activity-img {
-    max-width: 60px;
-  }
-
-  .summary-card {
-    min-width: 180px;
-    padding: 16px;
-  }
-
-  .summary-card h3 {
-    font-size: 16px;
-  }
-
-  .summary-card p {
-    font-size: 18px;
-  }
-
-  .back-btn {
-    font-size: 14px;
-    padding: 10px 20px;
-    width: 90%; /* ปุ่มเต็มจอมือถือ */
-  }
+/* ✅ Popup รูป (ครอบเต็มจอ + คลิกปิดง่าย) */
+#imagePopup {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 9999;
+  padding: 16px;
+  align-items: center;
+  justify-content: center;
+}
+#imagePopup img {
+  max-width: 92vw;
+  max-height: 86vh;
+  border-radius: 14px;
+  background: #fff;
 }
 
-/* ✅ Responsive สำหรับมือถือเล็ก */
-@media (max-width: 480px) {
-  h1 {
-    font-size: 20px;
-  }
-
-  h2 {
-    font-size: 16px;
-  }
-
-  table {
-    font-size: 12px;
-  }
-
-  th, td {
-    padding: 6px;
-  }
-
-  img.activity-img {
-    max-width: 50px;
-  }
+/* ✅ Tablet / iPad: การ์ดสรุป 2 คอลัมน์ */
+@media (min-width: 768px) {
+  h1 { font-size: 24px; }
+  h2 { font-size: 20px; }
 
   .summary {
-    flex-direction: column; /* การ์ดเรียงลง */
-    align-items: center;
+    grid-template-columns: 1fr 1fr;
   }
 
-  .summary-card {
-    width: 100%;
-    max-width: 300px;
-  }
+  /* iPad ใช้ fixed ได้ลื่นกว่า */
+  body { background-attachment: fixed; }
+}
 
-  .summary-card p {
-    font-size: 16px;
-  }
-
-  .back-btn {
-    font-size: 14px;
-    padding: 10px;
-    width: 100%;
+/* ✅ Desktop ใหญ่: สรุป 4 การ์ด */
+@media (min-width: 1024px) {
+  .summary {
+    grid-template-columns: repeat(4, 1fr);
   }
 }

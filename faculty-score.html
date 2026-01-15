@@ -7,14 +7,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
 
-<body>
-  <header>
+<body class="page">
+  <header class="topbar">
     <h1 id="facultyTitle">คะแนนคณะสี</h1>
   </header>
 
-  <main>
+  <main class="content">
     <!-- ตารางแยกตามประเภท -->
-    <section>
+    <section class="card">
       <h2>จำนวนคนมาสาย</h2>
       <div class="table-wrapper">
         <table>
@@ -32,7 +32,7 @@
       </div>
     </section>
 
-    <section>
+    <section class="card">
       <h2>คะแนนการเข้าแถว</h2>
       <div class="table-wrapper">
         <table>
@@ -50,7 +50,7 @@
       </div>
     </section>
 
-    <section>
+    <section class="card">
       <h2>คะแนนความสะอาด</h2>
       <div class="table-wrapper">
         <table>
@@ -70,13 +70,13 @@
 
     <!-- สรุปคะแนนรวม -->
     <div class="summary" id="summaryBox"></div>
-  </main>
 
-  <div class="action-buttons">
-    <button class="back-btn" onclick="window.location.href='summary.html'">
-      สรุปผลคณะยอดเยี่ยมประจำสัปดาห์
-    </button>
-  </div>
+    <div class="action-buttons">
+      <button class="back-btn" onclick="window.location.href='summary.html'">
+        สรุปผลคณะยอดเยี่ยมประจำสัปดาห์
+      </button>
+    </div>
+  </main>
 
   <footer>
     <p>© โรงเรียนสตรีนครสวรรค์ | <a href="select-faculty.html">หน้าเลือกคณะ</a></p>
