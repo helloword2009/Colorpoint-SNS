@@ -26,7 +26,7 @@
       <div class="form-group">
         <label for="scoreType">ประเภทคะแนน:</label>
         <select id="scoreType" class="form-control" required>
-          <option value="จำนวนคนมาสาย">จำนวนคนมาสาย</option>
+          <option value="คะแนนมาสาย">จำนวนคนมาสาย</option>
           <option value="คะแนนความสะอาด">คะแนนความสะอาด</option>
           <option value="คะแนนการเข้าแถว">คะแนนการเข้าแถว</option>
         </select>
@@ -65,7 +65,7 @@
   </main>
 
   <div id="imagePopup" onclick="closePopup()">
-    <img id="popupImage" src="">
+    <img id="popupImage" src="" alt="รูปกิจกรรม">
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -91,7 +91,8 @@
 
     const classroomSelect = document.getElementById("classroom");
     classroomSelect.innerHTML = "";
-    if (faculty && facultyClassroom && facultyClassroom[faculty]) {
+
+    if (faculty && typeof facultyClassroom !== "undefined" && facultyClassroom[faculty]) {
       facultyClassroom[faculty].forEach(room => {
         const opt = document.createElement("option");
         opt.value = room;
@@ -111,7 +112,7 @@
       const label = document.getElementById("scoreLabel");
       const input = document.getElementById("scoreValue");
 
-      if (type === "จำนวนคนมาสาย") {
+      if (type === "คะแนนมาสาย") {
         label.innerText = "จำนวนคนมาสาย:";
         input.placeholder = "กรอกจำนวนคนที่มาสาย";
       } else if (type === "คะแนนความสะอาด") {
@@ -123,71 +124,96 @@
       }
     });
 
+    // ✅ ตั้งค่า label ครั้งแรกให้ตรงกับค่าเริ่มต้น
+    document.getElementById("scoreType").dispatchEvent(new Event("change"));
+
     function addScore(event) {
       event.preventDefault();
 
+      if (!faculty) {
+        alert("ไม่พบข้อมูลคณะสี กรุณาเลือกคณะสีใหม่");
+        return; // ✅ ต้อง return ไม่งั้นโค้ดทำงานต่อ
+      }
+
       const classroom = document.getElementById("classroom").value;
       const type = document.getElementById("scoreType").value;
-      const value = parseInt(document.getElementById("scoreValue").value);
+      const value = parseInt(document.getElementById("scoreValue").value, 10);
       const time = new Date().toLocaleString("th-TH");
 
       const fileInput = document.getElementById("activityImage");
-      let imageData = "";
 
       if (fileInput.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-          imageData = e.target.result;
+          const imageData = e.target.result;
           saveHistory(faculty, classroom, type, value, time, imageData);
         };
         reader.readAsDataURL(fileInput.files[0]);
       } else {
-        saveHistory(faculty, classroom, type, value, time, imageData);
+        saveHistory(faculty, classroom, type, value, time, "");
       }
     }
 
+    // ✅ ไม่เด้งหน้า + บันทึกเสร็จให้ข้อมูลขึ้นทันที
     function saveHistory(faculty, classroom, type, value, time, imageData) {
       const newData = { faculty, classroom, type, value, time, image: imageData };
-      db.ref("scores").push(newData);
 
-      document.getElementById("scoreValue").value = "";
-      document.getElementById("activityImage").value = "";
-      document.getElementById("msg").innerText = "บันทึกข้อมูลเรียบร้อย ✅";
-      setTimeout(() => { document.getElementById("msg").innerText = ""; }, 3000);
+      db.ref("scores").push(newData)
+        .then(() => {
+          document.getElementById("scoreValue").value = "";
+          document.getElementById("activityImage").value = "";
+          document.getElementById("msg").innerText = "บันทึกข้อมูลเรียบร้อย ✅";
+          setTimeout(() => { document.getElementById("msg").innerText = ""; }, 1500);
+
+          // ✅ เรียก renderHistory เพื่อให้ตารางอัปเดต (จริง ๆ on() จะอัปเดตเอง แต่เรียกไว้ชัวร์)
+          renderHistory();
+        })
+        .catch((err) => {
+          alert("บันทึกไม่สำเร็จ: " + err.message);
+        });
     }
 
     function renderHistory() {
-      db.ref("scores").orderByChild("faculty").equalTo(faculty).on("value", (snapshot) => {
-        const data = snapshot.val() || {};
-        const tbody = document.getElementById("historyTable").querySelector("tbody");
-        tbody.innerHTML = "";
+      if (!faculty) return;
 
-        for (let key in data) {
-          const item = data[key];
-          const row = document.createElement("tr");
+      db.ref("scores")
+        .orderByChild("faculty")
+        .equalTo(faculty)
+        .on("value", (snapshot) => {
 
-          // ถ้าเป็นจำนวนคนมาสาย → แสดงเป็น "x คน"
-          let displayValue = item.value;
-          if (item.type === "จำนวนคนมาสาย") {
-            displayValue = item.value + " คน";
-          } else {
-            displayValue = item.value + " คะแนน";
+          const data = snapshot.val() || {};
+          const tbody = document.getElementById("historyTable").querySelector("tbody");
+          tbody.innerHTML = "";
+
+          for (let key in data) {
+            const item = data[key];
+            const row = document.createElement("tr");
+
+            let displayValue = item.value;
+            if (item.type === "คะแนนมาสาย") {
+              displayValue = item.value + " คน";
+            } else {
+              displayValue = item.value + " คะแนน";
+            }
+
+            row.innerHTML = `
+              <td>${item.time || "-"}</td>
+              <td>${item.faculty || "-"}</td>
+              <td>${item.classroom || "-"}</td>
+              <td>${item.type || "-"}</td>
+              <td>${displayValue}</td>
+              <td>${item.image ? `<img src="${item.image}" class="activity-img" onclick="openImagePopup('${item.image}')">` : "-"}</td>
+            `;
+            tbody.appendChild(row);
           }
-
-          row.innerHTML = `
-            <td>${item.time}</td>
-            <td>${item.faculty}</td>
-            <td>${item.classroom}</td>
-            <td>${item.type}</td>
-            <td>${displayValue}</td>
-            <td>${item.image ? `<img src="${item.image}" class="activity-img" onclick="openImagePopup('${item.image}')">` : "-"}</td>
-          `;
-          tbody.appendChild(row);
-        }
-      });
+        });
     }
 
     function resetHistory() {
+      if (!faculty) {
+        alert("ไม่พบข้อมูลคณะสี");
+        return;
+      }
       if (confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างประวัติทั้งหมด?")) {
         db.ref("scores").orderByChild("faculty").equalTo(faculty).once("value", (snapshot) => {
           snapshot.forEach((child) => {
@@ -206,8 +232,12 @@
       document.getElementById("imagePopup").style.display = "none";
     }
 
+    // โหลดประวัติเมื่อเปิดหน้า
     renderHistory();
   </script>
 
   <footer>
     <p>© โรงเรียนสตรีนครสวรรค์ | <a href="select-faculty.html">ดูคะแนนคณะสี</a></p>
+  </footer>
+</body>
+</html>
