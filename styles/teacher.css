@@ -171,3 +171,147 @@ a {
   color: #FFD700; /* ลิงก์เหลือง */
   text-decoration: none;
 }
+:root{
+  --navy:#003366;
+  --gold:#FFD700;
+  --card: rgba(255,255,255,.92);
+  --shadow: 0 10px 22px rgba(0,0,0,.12);
+  --radius: 16px;
+}
+
+body{
+  margin:0;
+  font-family:Tahoma, sans-serif;
+  color:var(--navy);
+  background: url("../images/DSC_0694.jpg") center/cover no-repeat;
+}
+
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  background: rgba(255,255,255,.45);
+  z-index:0;
+}
+header, main, footer, #imagePopup{ position:relative; z-index:1; }
+
+header{
+  background:var(--navy);
+  color:var(--gold);
+  padding:14px 12px;
+  position:sticky; top:0; z-index:5;
+  box-shadow: 0 4px 10px rgba(0,0,0,.2);
+}
+header h1{ margin:0; font-size:20px; line-height:1.2; }
+
+.page{
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 14px;
+  display: grid;
+  gap: 14px;
+}
+
+.card{
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(0,0,0,.08);
+  padding: 14px;
+}
+
+.card-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom: 10px;
+}
+.card-head h2{ margin:0; font-size:18px; }
+.sub{ margin:0; opacity:.75; font-size:13px; }
+
+.badge{
+  background: var(--navy);
+  color: var(--gold);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.form-grid{
+  display:grid;
+  gap: 12px;
+}
+.field label{
+  display:block;
+  text-align:left;
+  font-weight:700;
+  margin-bottom:6px;
+}
+.control{
+  width:100%;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.15);
+  background: #fff;
+  font-size: 14px;
+}
+
+.actions{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+.btn{
+  border: none;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.btn.primary{ background: var(--navy); color: var(--gold); }
+.btn.ghost{ background: #fff; color: var(--navy); border: 2px solid var(--navy); }
+.btn:active{ transform: scale(.99); }
+
+.msg{ margin: 6px 0 0; font-weight: 800; }
+
+.table-wrap{
+  overflow-x:auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  background:#fff;
+}
+table{
+  width:100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+th,td{
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  text-align:center;
+  white-space: nowrap;
+  font-size: 14px;
+}
+th{
+  background: var(--navy);
+  color: var(--gold);
+  position: sticky;
+  top: 0;
+}
+
+.activity-img{
+  width: 54px; height: 54px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 2px solid var(--gold);
+}
+
+/* iPad: ปุ่ม 2 คอลัมน์ */
+@media (min-width: 768px){
+  header h1{ font-size:22px; }
+  .actions{ grid-template-columns: 1fr 1fr; }
+}

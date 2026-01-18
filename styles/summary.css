@@ -80,3 +80,70 @@ button.print-btn:hover {
   background: #FFD700;
   color: #003366;
 }
+/* กล่องรวม */
+.winner-box{
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 0 12px; /* กันชิดจอมือถือ */
+}
+
+/* การ์ดประกาศผู้ชนะ */
+.winner-hero{
+  display: flex;
+  align-items: center;
+  justify-content: center;  /* ✅ กลางจริง */
+  gap: 20px;
+
+  padding: 20px 30px;
+  background: rgba(255,255,255,0.9);
+  border: 4px solid #FFD700;
+  border-radius: 20px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+}
+
+/* ไอคอนถ้วย */
+.winner-hero .trophy{
+  font-size: 48px;
+  background: #003366;
+  color: #FFD700;
+  width: 70px;
+  height: 70px;
+  border-radius: 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ข้อความ */
+.winner-hero .winner-text{
+  text-align: left;
+}
+
+.winner-hero .title{
+  font-size: 18px;
+  color: #003366;
+  font-weight: bold;
+}
+
+.winner-hero .name{
+  font-size: 26px;
+  color: #003366;
+  font-weight: bold;
+}
+
+.winner-hero .score{
+  font-size: 18px;
+  color: #555;
+}
+
+/* มือถือ */
+@media (max-width: 600px){
+  .winner-hero{
+    flex-direction: column;
+    text-align: center;
+  }
+  .winner-hero .winner-text{
+    text-align: center;
+  }
+}

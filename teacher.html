@@ -11,58 +11,72 @@
     <h1>ระบบจัดการคะแนน โรงเรียนสตรีนครสวรรค์</h1>
   </header>
 
-  <main>
-    <form onsubmit="addScore(event)" class="form-card">
-      <div class="form-group">
-        <label>คณะสี:</label>
-        <span id="facultyName" class="faculty-label"></span>
-      </div>
-      
-      <div class="form-group">
-        <label for="classroom">ห้องเรียน:</label>
-        <select id="classroom" class="form-control" required></select>
+  <main class="page">
+  <section class="card">
+    <div class="card-head">
+      <h2>📝 บันทึกคะแนนวันนี้</h2>
+      <div class="badge" id="facultyName"></div>
+    </div>
+
+    <form onsubmit="addScore(event)" class="form-grid">
+      <div class="field">
+        <label>ห้องเรียน</label>
+        <select id="classroom" class="control" required></select>
       </div>
 
-      <div class="form-group">
-        <label for="scoreType">ประเภทคะแนน:</label>
-        <select id="scoreType" class="form-control" required>
+      <div class="field">
+        <label>ประเภทคะแนน</label>
+        <select id="scoreType" class="control" required>
           <option value="คะแนนมาสาย">จำนวนคนมาสาย</option>
           <option value="คะแนนความสะอาด">คะแนนความสะอาด</option>
           <option value="คะแนนการเข้าแถว">คะแนนการเข้าแถว</option>
         </select>
       </div>
 
-      <div class="form-group">
-        <label for="scoreValue" id="scoreLabel">คะแนน:</label>
-        <input type="number" id="scoreValue" class="form-control" required placeholder="กรอกคะแนน">
+      <div class="field">
+        <label id="scoreLabel">คะแนน</label>
+        <input type="number" id="scoreValue" class="control" required placeholder="กรอกคะแนน">
       </div>
 
-      <div class="form-group">
-        <label for="activityImage">แนบรูปกิจกรรม:</label>
-        <input type="file" id="activityImage" class="form-control" accept="image/*">
+      <div class="field">
+        <label>แนบรูปกิจกรรม</label>
+        <input type="file" id="activityImage" class="control" accept="image/*">
       </div>
 
-      <button type="submit" class="submit-btn">บันทึกคะแนน</button>
+      <div class="actions">
+        <button type="submit" class="btn primary">บันทึกคะแนน</button>
+        <button type="button" class="btn ghost" onclick="resetHistory()">รีเซ็ตประวัติทั้งหมด</button>
+      </div>
+
+      <p id="msg" class="msg"></p>
     </form>
+  </section>
 
-    <p id="msg"></p>
+  <section class="card">
+    <div class="card-head">
+      <h2>📊 ประวัติการบันทึก</h2>
+      <p class="sub">ข้อมูลของคณะที่เลือก (อัปเดตอัตโนมัติ)</p>
+    </div>
 
-    <table id="historyTable">
-      <thead>
-        <tr>
-          <th>เวลา</th>
-          <th>คณะสี</th>
-          <th>ห้องเรียน</th>
-          <th>ประเภทคะแนน</th>
-          <th>ค่า</th>
-          <th>รูปกิจกรรม</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-wrap">
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>เวลา</th>
+            <th>คณะสี</th>
+            <th>ห้องเรียน</th>
+            <th>ประเภทคะแนน</th>
+            <th>ค่า</th>
+            <th>รูปกิจกรรม</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
 
-    <button class="reset-btn" onclick="resetHistory()">รีเซ็ตประวัติทั้งหมด</button>
-  </main>
+  <a class="backlink" href="select-faculty.html">← กลับไปดูคะแนนคณะสี</a>
+</main>
 
   <div id="imagePopup" onclick="closePopup()">
     <img id="popupImage" src="" alt="รูปกิจกรรม">
