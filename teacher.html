@@ -3,89 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <title>หน้าสำหรับครู</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles/teacher.css">
   <script src="scripts/auth.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-
 <body>
   <header>
-    <div class="inner">
-      <h1>ระบบจัดการคะแนน โรงเรียนสตรีนครสวรรค์</h1>
-    </div>
-  </header>
+  <div class="inner">
+    <h1>ระบบจัดการคะแนน โรงเรียนสตรีนครสวรรค์</h1>
+  </div>
+</header>
+
 
   <main class="page">
-    <section class="card">
-      <div class="card-head">
-        <h2>📝 บันทึกคะแนนวันนี้</h2>
-        <div class="badge" id="facultyName"></div>
+  <section class="card">
+    <div class="card-head">
+      <h2>📝 บันทึกคะแนนวันนี้</h2>
+      <div class="badge" id="facultyName"></div>
+    </div>
+
+    <form onsubmit="addScore(event)" class="form-grid">
+      <div class="field">
+        <label>ห้องเรียน</label>
+        <select id="classroom" class="control" required></select>
       </div>
 
-      <form onsubmit="addScore(event)" class="form-grid">
-        <div class="field">
-          <label>ห้องเรียน</label>
-          <select id="classroom" class="control" required></select>
-        </div>
-
-        <div class="field">
-          <label>ประเภทคะแนน</label>
-          <select id="scoreType" class="control" required>
-            <option value="คะแนนมาสาย">จำนวนคนมาสาย</option>
-            <option value="คะแนนความสะอาด">คะแนนความสะอาด</option>
-            <option value="คะแนนการเข้าแถว">คะแนนการเข้าแถว</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label id="scoreLabel">คะแนน</label>
-          <input type="number" id="scoreValue" class="control" required placeholder="กรอกคะแนน">
-        </div>
-
-        <div class="field">
-          <label>แนบรูปกิจกรรม</label>
-          <input type="file" id="activityImage" class="control" accept="image/*">
-        </div>
-
-        <div class="actions">
-          <button type="submit" class="btn primary">บันทึกคะแนน</button>
-          <button type="button" class="btn ghost" onclick="resetHistory()">รีเซ็ตประวัติทั้งหมด</button>
-        </div>
-
-        <p id="msg" class="msg"></p>
-      </form>
-    </section>
-
-    <section class="card">
-      <div class="card-head">
-        <h2>📊 ประวัติการบันทึก</h2>
-        <p class="sub">ข้อมูลของคณะที่เลือก (อัปเดตอัตโนมัติ)</p>
+      <div class="field">
+        <label>ประเภทคะแนน</label>
+        <select id="scoreType" class="control" required>
+          <option value="คะแนนมาสาย">จำนวนคนมาสาย</option>
+          <option value="คะแนนความสะอาด">คะแนนความสะอาด</option>
+          <option value="คะแนนการเข้าแถว">คะแนนการเข้าแถว</option>
+        </select>
       </div>
 
-      <div class="table-wrap">
-        <table id="historyTable">
-          <thead>
-            <tr>
-              <th>เวลา</th>
-              <th>คณะสี</th>
-              <th>ห้องเรียน</th>
-              <th>ประเภทคะแนน</th>
-              <th>ค่า</th>
-              <th>รูปกิจกรรม</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <div class="field">
+        <label id="scoreLabel">คะแนน</label>
+        <input type="number" id="scoreValue" class="control" required placeholder="กรอกคะแนน">
       </div>
-    </section>
-  </main>
 
-  <!-- popup รูป -->
+      <div class="field">
+        <label>แนบรูปกิจกรรม</label>
+        <input type="file" id="activityImage" class="control" accept="image/*">
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn primary">บันทึกคะแนน</button>
+        <button type="button" class="btn ghost" onclick="resetHistory()">รีเซ็ตประวัติทั้งหมด</button>
+      </div>
+
+      <p id="msg" class="msg"></p>
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>📊 ประวัติการบันทึก</h2>
+      <p class="sub">ข้อมูลของคณะที่เลือก (อัปเดตอัตโนมัติ)</p>
+    </div>
+
+    <div class="table-wrap">
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>เวลา</th>
+            <th>คณะสี</th>
+            <th>ห้องเรียน</th>
+            <th>ประเภทคะแนน</th>
+            <th>ค่า</th>
+            <th>รูปกิจกรรม</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
   <div id="imagePopup" onclick="closePopup()">
     <img id="popupImage" src="" alt="รูปกิจกรรม">
   </div>
 
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -107,9 +106,6 @@
     const faculty = localStorage.getItem("currentFaculty");
     document.getElementById("facultyName").innerText = faculty || "ไม่พบข้อมูลคณะ";
 
-    // =========================
-    // เติมห้องเรียน
-    // =========================
     const classroomSelect = document.getElementById("classroom");
     classroomSelect.innerHTML = "";
 
@@ -127,11 +123,8 @@
       classroomSelect.appendChild(opt);
     }
 
-    // =========================
-    // เปลี่ยน label ตามประเภทคะแนน
-    // =========================
-    const scoreTypeEl = document.getElementById("scoreType");
-    scoreTypeEl.addEventListener("change", function() {
+    // เปลี่ยน label/placeholder ตามประเภทคะแนน
+    document.getElementById("scoreType").addEventListener("change", function() {
       const type = this.value;
       const label = document.getElementById("scoreLabel");
       const input = document.getElementById("scoreValue");
@@ -142,22 +135,21 @@
       } else if (type === "คะแนนความสะอาด") {
         label.innerText = "คะแนนความสะอาด:";
         input.placeholder = "กรอกคะแนนความสะอาด";
-      } else {
+      } else if (type === "คะแนนการเข้าแถว") {
         label.innerText = "คะแนนการเข้าแถว:";
         input.placeholder = "กรอกคะแนนการเข้าแถว";
       }
     });
-    scoreTypeEl.dispatchEvent(new Event("change"));
 
-    // =========================
-    // บันทึกคะแนน
-    // =========================
+    // ✅ ตั้งค่า label ครั้งแรกให้ตรงกับค่าเริ่มต้น
+    document.getElementById("scoreType").dispatchEvent(new Event("change"));
+
     function addScore(event) {
       event.preventDefault();
 
       if (!faculty) {
         alert("ไม่พบข้อมูลคณะสี กรุณาเลือกคณะสีใหม่");
-        return;
+        return; // ✅ ต้อง return ไม่งั้นโค้ดทำงานต่อ
       }
 
       const classroom = document.getElementById("classroom").value;
@@ -170,7 +162,8 @@
       if (fileInput.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-          saveHistory(faculty, classroom, type, value, time, e.target.result);
+          const imageData = e.target.result;
+          saveHistory(faculty, classroom, type, value, time, imageData);
         };
         reader.readAsDataURL(fileInput.files[0]);
       } else {
@@ -178,6 +171,7 @@
       }
     }
 
+    // ✅ ไม่เด้งหน้า + บันทึกเสร็จให้ข้อมูลขึ้นทันที
     function saveHistory(faculty, classroom, type, value, time, imageData) {
       const newData = { faculty, classroom, type, value, time, image: imageData };
 
@@ -188,35 +182,36 @@
           document.getElementById("msg").innerText = "บันทึกข้อมูลเรียบร้อย ✅";
           setTimeout(() => { document.getElementById("msg").innerText = ""; }, 1500);
 
-          // ✅ ไม่ต้องเรียก renderHistory() ซ้ำ เพราะเราผูก on() ไว้แล้ว ตารางจะอัปเดตเอง
+          // ✅ เรียก renderHistory เพื่อให้ตารางอัปเดต (จริง ๆ on() จะอัปเดตเอง แต่เรียกไว้ชัวร์)
+          renderHistory();
         })
         .catch((err) => {
           alert("บันทึกไม่สำเร็จ: " + err.message);
         });
     }
 
-    // =========================
-    // แสดงประวัติ (ผูก listener ครั้งเดียว)
-    // =========================
-    function renderHistoryLive() {
+    function renderHistory() {
       if (!faculty) return;
 
       db.ref("scores")
         .orderByChild("faculty")
         .equalTo(faculty)
         .on("value", (snapshot) => {
+
           const data = snapshot.val() || {};
-          const tbody = document.querySelector("#historyTable tbody");
+          const tbody = document.getElementById("historyTable").querySelector("tbody");
           tbody.innerHTML = "";
 
-          for (const key in data) {
+          for (let key in data) {
             const item = data[key];
-
             const row = document.createElement("tr");
-            const displayValue =
-              item.type === "คะแนนมาสาย"
-                ? (item.value + " คน")
-                : (item.value + " คะแนน");
+
+            let displayValue = item.value;
+            if (item.type === "คะแนนมาสาย") {
+              displayValue = item.value + " คน";
+            } else {
+              displayValue = item.value + " คะแนน";
+            }
 
             row.innerHTML = `
               <td>${item.time || "-"}</td>
@@ -231,27 +226,20 @@
         });
     }
 
-    // =========================
-    // รีเซ็ตประวัติของคณะนี้
-    // =========================
     function resetHistory() {
       if (!faculty) {
         alert("ไม่พบข้อมูลคณะสี");
         return;
       }
-      if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างประวัติทั้งหมด?")) return;
-
-      db.ref("scores")
-        .orderByChild("faculty")
-        .equalTo(faculty)
-        .once("value", (snapshot) => {
-          snapshot.forEach((child) => child.ref.remove());
+      if (confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างประวัติทั้งหมด?")) {
+        db.ref("scores").orderByChild("faculty").equalTo(faculty).once("value", (snapshot) => {
+          snapshot.forEach((child) => {
+            child.ref.remove();
+          });
         });
+      }
     }
 
-    // =========================
-    // popup รูป
-    // =========================
     function openImagePopup(src) {
       document.getElementById("popupImage").src = src;
       document.getElementById("imagePopup").style.display = "block";
@@ -261,19 +249,15 @@
       document.getElementById("imagePopup").style.display = "none";
     }
 
-    window.addScore = addScore;
-    window.resetHistory = resetHistory;
-    window.openImagePopup = openImagePopup;
-    window.closePopup = closePopup;
-
-    // เริ่มโหลดประวัติ
-    renderHistoryLive();
+    // โหลดประวัติเมื่อเปิดหน้า
+    renderHistory();
   </script>
 
   <footer>
-    <div class="inner">
-      <p>© โรงเรียนสตรีนครสวรรค์ | <a href="select-faculty.html">ดูคะแนนคณะสี</a></p>
-    </div>
-  </footer>
+  <div class="inner">
+    <p>© โรงเรียนสตรีนครสวรรค์ | <a href="select-faculty.html">ดูคะแนนคณะสี</a></p>
+  </div>
+</footer>
+
 </body>
 </html>
