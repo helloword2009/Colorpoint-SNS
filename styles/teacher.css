@@ -37,7 +37,7 @@ header, main, footer, #imagePopup{
 
 /* ===== แถบน้ำเงินบน (เต็มจอ ไม่แหว่ง) ===== */
 header{
-  width: 800px;
+  width: 100%;
   background: var(--navy);
   color: var(--gold);
   padding: 14px 0;
@@ -214,7 +214,7 @@ th{
 
 /* ===== แถบน้ำเงินล่าง (เต็มจอ ไม่แหว่ง) ===== */
 footer{
-  width: 800px;;
+  width: 100%;
   background: var(--navy);
   color: var(--gold);
   text-align:center;
