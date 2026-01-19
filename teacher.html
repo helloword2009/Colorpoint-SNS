@@ -1,94 +1,101 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>หน้าสำหรับครู</title>
-  <link rel="stylesheet" href="styles/teacher.css?v=1">
+  <link rel="stylesheet" href="styles/teacher.css?v=4" />
   <script src="scripts/auth.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
+
 <body>
   <header>
-  <div class="inner">
-    <h1>ระบบจัดการคะแนน โรงเรียนสตรีนครสวรรค์</h1>
-  </div>
-</header>
-
+    <div class="inner">
+      <h1>ระบบจัดการคะแนน โรงเรียนสตรีนครสวรรค์</h1>
+    </div>
+  </header>
 
   <main class="page">
-  <section class="card">
-    <div class="card-head">
-      <h2>📝 บันทึกคะแนนวันนี้</h2>
-      <div class="badge" id="facultyName"></div>
-    </div>
-
-    <form onsubmit="addScore(event)" class="form-grid">
-      <div class="field">
-        <label>ห้องเรียน</label>
-        <select id="classroom" class="control" required></select>
+    <section class="card">
+      <div class="card-head">
+        <h2>📝 บันทึกคะแนนวันนี้</h2>
+        <div class="badge" id="facultyName"></div>
       </div>
 
-      <div class="field">
-        <label>ประเภทคะแนน</label>
-        <select id="scoreType" class="control" required>
-          <option value="คะแนนมาสาย">จำนวนคนมาสาย</option>
-          <option value="คะแนนความสะอาด">คะแนนความสะอาด</option>
-          <option value="คะแนนการเข้าแถว">คะแนนการเข้าแถว</option>
-        </select>
+      <form onsubmit="addScore(event)" class="form-grid">
+        <div class="field">
+          <label>ห้องเรียน</label>
+          <select id="classroom" class="control" required></select>
+        </div>
+
+        <div class="field">
+          <label>ประเภทคะแนน</label>
+          <select id="scoreType" class="control" required>
+            <option value="คะแนนมาสาย">จำนวนคนมาสาย</option>
+            <option value="คะแนนความสะอาด">คะแนนความสะอาด</option>
+            <option value="คะแนนการเข้าแถว">คะแนนการเข้าแถว</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label id="scoreLabel">คะแนน</label>
+          <input type="number" id="scoreValue" class="control" required placeholder="กรอกคะแนน" />
+        </div>
+
+        <div class="field">
+          <label>แนบรูปกิจกรรม</label>
+          <input type="file" id="activityImage" class="control" accept="image/*" />
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn primary">บันทึกคะแนน</button>
+          <button type="button" class="btn ghost" onclick="resetHistory()">รีเซ็ตประวัติทั้งหมด</button>
+
+          <!-- ✅ เพิ่มปุ่มออกจากระบบ (ล้างสิทธิ์ครู) -->
+          <button type="button" class="btn ghost" onclick="logoutTeacher()">ออกจากระบบ</button>
+        </div>
+
+        <p id="msg" class="msg"></p>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>📊 ประวัติการบันทึก</h2>
+        <p class="sub">ข้อมูลของคณะที่เลือก (อัปเดตอัตโนมัติ)</p>
       </div>
 
-      <div class="field">
-        <label id="scoreLabel">คะแนน</label>
-        <input type="number" id="scoreValue" class="control" required placeholder="กรอกคะแนน">
+      <div class="table-wrap">
+        <table id="historyTable">
+          <thead>
+            <tr>
+              <th>เวลา</th>
+              <th>คณะสี</th>
+              <th>ห้องเรียน</th>
+              <th>ประเภทคะแนน</th>
+              <th>ค่า</th>
+              <th>รูปกิจกรรม</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
-
-      <div class="field">
-        <label>แนบรูปกิจกรรม</label>
-        <input type="file" id="activityImage" class="control" accept="image/*">
-      </div>
-
-      <div class="actions">
-        <button type="submit" class="btn primary">บันทึกคะแนน</button>
-        <button type="button" class="btn ghost" onclick="resetHistory()">รีเซ็ตประวัติทั้งหมด</button>
-      </div>
-
-      <p id="msg" class="msg"></p>
-    </form>
-  </section>
-
-  <section class="card">
-    <div class="card-head">
-      <h2>📊 ประวัติการบันทึก</h2>
-      <p class="sub">ข้อมูลของคณะที่เลือก (อัปเดตอัตโนมัติ)</p>
-    </div>
-
-    <div class="table-wrap">
-      <table id="historyTable">
-        <thead>
-          <tr>
-            <th>เวลา</th>
-            <th>คณะสี</th>
-            <th>ห้องเรียน</th>
-            <th>ประเภทคะแนน</th>
-            <th>ค่า</th>
-            <th>รูปกิจกรรม</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
-
-</main>
+    </section>
+  </main>
 
   <div id="imagePopup" onclick="closePopup()">
-    <img id="popupImage" src="" alt="รูปกิจกรรม">
+    <img id="popupImage" src="" alt="รูปกิจกรรม" />
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <script>
+    // =========================
+    // ✅ ตั้งค่าสิทธิ์ครู: เปิดหน้า teacher = เป็นครู
+    // =========================
+    localStorage.setItem("isTeacher", "1");
+
     const firebaseConfig = {
       apiKey: "AIzaSyDwmeumgDSVlspe7gIcF6rVbe-hBye7Q3I",
       authDomain: "school-scores-8e9eb.firebaseapp.com",
@@ -104,6 +111,13 @@
     const db = firebase.database();
 
     const faculty = localStorage.getItem("currentFaculty");
+
+    // ✅ กันนักเรียนเข้าหน้าครูแบบพิมพ์ลิงก์ตรง ๆ
+    if (!faculty) {
+      alert("กรุณาเลือกคณะสี/เข้าสู่ระบบครูก่อน");
+      window.location.href = "select-faculty.html"; // หรือ role.html แล้วแต่หน้าเริ่มของคุณ
+    }
+
     document.getElementById("facultyName").innerText = faculty || "ไม่พบข้อมูลคณะ";
 
     const classroomSelect = document.getElementById("classroom");
@@ -123,7 +137,6 @@
       classroomSelect.appendChild(opt);
     }
 
-    // เปลี่ยน label/placeholder ตามประเภทคะแนน
     document.getElementById("scoreType").addEventListener("change", function() {
       const type = this.value;
       const label = document.getElementById("scoreLabel");
@@ -141,7 +154,6 @@
       }
     });
 
-    // ✅ ตั้งค่า label ครั้งแรกให้ตรงกับค่าเริ่มต้น
     document.getElementById("scoreType").dispatchEvent(new Event("change"));
 
     function addScore(event) {
@@ -149,7 +161,7 @@
 
       if (!faculty) {
         alert("ไม่พบข้อมูลคณะสี กรุณาเลือกคณะสีใหม่");
-        return; // ✅ ต้อง return ไม่งั้นโค้ดทำงานต่อ
+        return;
       }
 
       const classroom = document.getElementById("classroom").value;
@@ -171,7 +183,6 @@
       }
     }
 
-    // ✅ ไม่เด้งหน้า + บันทึกเสร็จให้ข้อมูลขึ้นทันที
     function saveHistory(faculty, classroom, type, value, time, imageData) {
       const newData = { faculty, classroom, type, value, time, image: imageData };
 
@@ -181,8 +192,6 @@
           document.getElementById("activityImage").value = "";
           document.getElementById("msg").innerText = "บันทึกข้อมูลเรียบร้อย ✅";
           setTimeout(() => { document.getElementById("msg").innerText = ""; }, 1500);
-
-          // ✅ เรียก renderHistory เพื่อให้ตารางอัปเดต (จริง ๆ on() จะอัปเดตเอง แต่เรียกไว้ชัวร์)
           renderHistory();
         })
         .catch((err) => {
@@ -249,15 +258,21 @@
       document.getElementById("imagePopup").style.display = "none";
     }
 
-    // โหลดประวัติเมื่อเปิดหน้า
+    // ✅ ออกจากระบบครู: ล้างสิทธิ์ + กลับหน้าเลือกบทบาท (แก้ชื่อไฟล์ปลายทางได้)
+    function logoutTeacher() {
+      localStorage.removeItem("isTeacher");
+      // ถ้าต้องการล้างคณะด้วย (ไม่บังคับ) ให้เปิดบรรทัดล่าง
+      // localStorage.removeItem("currentFaculty");
+      window.location.href = "role.html"; // หรือ index.html แล้วแต่หน้าเริ่มของคุณ
+    }
+
     renderHistory();
   </script>
 
   <footer>
-  <div class="inner">
-    <p>© โรงเรียนสตรีนครสวรรค์ | <a href="select-faculty.html">ดูคะแนนคณะสี</a></p>
-  </div>
-</footer>
-
+    <div class="inner">
+      <p>© โรงเรียนสตรีนครสวรรค์ | <a href="select-faculty.html">ดูคะแนนคณะสี</a></p>
+    </div>
+  </footer>
 </body>
 </html>
