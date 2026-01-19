@@ -6,12 +6,13 @@
   --radius: 16px;
 }
 
-*{ box-sizing: border-box; }
+*{ box-sizing:border-box; }
 
 html, body{
-  width:100%;
   margin:0;
   padding:0;
+  width:100%;
+  overflow-x:hidden; /* กันแถบแหว่งจากแนวนอนล้น */
 }
 
 body{
@@ -35,22 +36,34 @@ header, main, footer, #imagePopup{
   z-index: 1;
 }
 
-/* ===== แถบน้ำเงินบน (เต็มจอ ไม่แหว่ง) ===== */
-header{
-  width: 100%;
+/* =========================
+   HEADER / FOOTER (FULL BLEED)
+   ========================= */
+header, footer{
   background: var(--navy);
   color: var(--gold);
+  width: 100vw;                         /* เต็มจอจริง */
+  margin-left: calc(50% - 50vw);        /* ดึงออกจากกรอบกลาง */
+  margin-right: calc(50% - 50vw);
+  border-radius: 0;
+}
+
+header{
   padding: 14px 0;
   text-align:center;
   position: sticky;
-  top:0;
+  top: 0;
   z-index: 5;
   box-shadow: 0 4px 10px rgba(0,0,0,.2);
 }
 
-/* ถ้า HTML มี <div class="inner"> */
-header .inner,
-footer .inner{
+footer{
+  padding: 14px 0;
+  text-align:center;
+}
+
+/* คุมความกว้างเนื้อหาข้างในแถบ */
+header .inner, footer .inner{
   width: min(980px, 100%);
   margin: 0 auto;
   padding: 0 12px;
@@ -62,16 +75,22 @@ header h1{
   line-height: 1.2;
 }
 
-/* ===== โครงหน้า ===== */
+a{
+  color: var(--gold);
+  text-decoration:none;
+}
+
+/* =========================
+   PAGE LAYOUT
+   ========================= */
 .page{
   width: min(980px, 100%);
   margin: 0 auto;
   padding: 14px 12px 18px;
-  display:grid;
+  display: grid;
   gap: 14px;
 }
 
-/* ===== การ์ด ===== */
 .card{
   background: var(--card);
   border-radius: var(--radius);
@@ -109,12 +128,17 @@ header h1{
   white-space: nowrap;
 }
 
-/* ===== ฟอร์ม ===== */
-.form-grid{ display:grid; gap: 12px; }
+/* =========================
+   FORM (แก้ “ช่องกรอกมาแค่ครึ่งเดียว”)
+   ========================= */
+.form-grid{
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
 
-/* ✅ สำคัญ: บังคับ label อยู่บน input เสมอ (แก้อาการ “ครึ่งเดียว”) */
 .field{
-  display:flex;
+  display: flex;
   flex-direction: column;
   gap: 6px;
   width: 100%;
@@ -128,36 +152,39 @@ header h1{
 }
 
 .control{
-  width:100% !important;
   display:block;
+  width: 100%;
+  max-width: 100%;
   padding: 12px 12px;
   border-radius: 12px;
   border: 1px solid rgba(0,0,0,.15);
   background:#fff;
-  font-size: 16px;     /* กัน iOS ซูม */
+  font-size: 16px; /* กัน iOS ซูม */
 }
 
-/* กันบาง browser ทำ input แคบเอง */
-input.control,
-select.control{
-  max-width: 100%;
+/* บังคับ input/file/select ให้เต็มจริง */
+input.control, select.control{
+  width:100%;
+  max-width:100%;
 }
 
-/* ===== ปุ่ม ===== */
+/* =========================
+   BUTTONS
+   ========================= */
 .actions{
-  display:grid;
+  display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
   margin-top: 6px;
 }
 
 .btn{
+  width: 100%;
   border:none;
   border-radius: 12px;
   padding: 12px 14px;
   font-weight: 900;
   cursor:pointer;
-  width: 100%;
 }
 
 .btn.primary{ background: var(--navy); color: var(--gold); }
@@ -170,7 +197,9 @@ select.control{
   color: #1f3fff;
 }
 
-/* ===== ตาราง: จอเล็กให้เลื่อน ไม่บีบจนเล็ก ===== */
+/* =========================
+   TABLE (มือถือให้เลื่อน ไม่ย่อจนเล็ก)
+   ========================= */
 .table-wrap{
   width:100%;
   overflow-x:auto;
@@ -199,7 +228,6 @@ th{
   color: var(--gold);
 }
 
-/* รูปในตาราง */
 .activity-img{
   width: 54px;
   height: 54px;
@@ -209,7 +237,9 @@ th{
   cursor:pointer;
 }
 
-/* ===== popup รูป ===== */
+/* =========================
+   POPUP
+   ========================= */
 #imagePopup{
   display:none;
   position:fixed;
@@ -227,62 +257,17 @@ th{
   box-shadow: 0 0 20px rgba(255,215,0,.6);
 }
 
-/* ===== แถบน้ำเงินล่าง (เต็มจอ ไม่แหว่ง) ===== */
-footer{
-  width: 100%;
-  background: var(--navy);
-  color: var(--gold);
-  text-align:center;
-  padding: 14px 0;
-}
-
-a{
-  color: var(--gold);
-  text-decoration:none;
-}
-
-/* ===== Responsive ===== */
+/* =========================
+   RESPONSIVE
+   ========================= */
 @media (min-width: 768px){
   header h1{ font-size: 22px; }
-  .actions{ grid-template-columns: 1fr 1fr; } /* iPad/คอม: ปุ่ม 2 ช่อง */
+  .actions{ grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 480px){
   header h1{ font-size: 18px; }
   .card{ padding: 12px; }
+  table{ min-width: 700px; }
   th, td{ font-size: 13px; }
-  table{ min-width: 700px; } /* ลดนิดให้เลื่อนง่ายขึ้น */
-}
-/* ===== FORCE FULL-WIDTH HEADER/FOOTER (แก้แถบน้ำเงินแหว่ง) ===== */
-header, footer{
-  width: 100vw !important;
-  margin-left: calc(50% - 50vw) !important;  /* ดึงออกจากกรอบที่จัดกลาง */
-  margin-right: calc(50% - 50vw) !important;
-
-  left: 0 !important;
-  right: 0 !important;
-
-  border-radius: 0 !important;
-  overflow: visible !important;
-}
-/* ===== FIX แถบน้ำเงินแหว่ง (FULL BLEED) ===== */
-header, footer{
-  position: relative !important;
-  background: transparent !important; /* ให้พื้นหลังไปอยู่ที่ ::before */
-}
-
-header::before, footer::before{
-  content: "";
-  position: absolute;
-  top: 0; bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100vw;                 /* ✅ เต็มจอจริง */
-  background: var(--navy);      /* น้ำเงิน */
-  z-index: -1;
-}
-
-/* กันขอบโค้งทำให้ดูแหว่ง */
-header, footer{
-  border-radius: 0 !important;
 }
