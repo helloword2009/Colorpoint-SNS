@@ -13,7 +13,6 @@
   </header>
 
   <main class="content">
-    <!-- ตารางแยกตามประเภท -->
     <section class="card">
       <h2>จำนวนคนมาสาย</h2>
       <div class="table-wrapper">
@@ -24,7 +23,7 @@
               <th>ห้องเรียน</th>
               <th>คน</th>
               <th>รูปกิจกรรม</th>
-              <th>แก้ไขคะแนน</th>
+              <th id="editHeadLate">แก้ไขคะแนน</th>
             </tr>
           </thead>
           <tbody id="lateTable"></tbody>
@@ -42,7 +41,7 @@
               <th>ห้องเรียน</th>
               <th>คะแนน</th>
               <th>รูปกิจกรรม</th>
-              <th>แก้ไขคะแนน</th>
+              <th id="editHeadLine">แก้ไขคะแนน</th>
             </tr>
           </thead>
           <tbody id="lineTable"></tbody>
@@ -60,7 +59,7 @@
               <th>ห้องเรียน</th>
               <th>คะแนน</th>
               <th>รูปกิจกรรม</th>
-              <th>แก้ไขคะแนน</th>
+              <th id="editHeadClean">แก้ไขคะแนน</th>
             </tr>
           </thead>
           <tbody id="cleanTable"></tbody>
@@ -68,7 +67,6 @@
       </div>
     </section>
 
-    <!-- สรุปคะแนนรวม -->
     <div class="summary" id="summaryBox"></div>
 
     <div class="action-buttons">
@@ -82,12 +80,10 @@
     <p>© โรงเรียนสตรีนครสวรรค์ | <a href="select-faculty.html">หน้าเลือกคณะ</a></p>
   </footer>
 
-  <!-- popup รูป -->
   <div id="imagePopup" onclick="closePopup()">
     <img id="popupImage" src="" alt="รูปกิจกรรม" />
   </div>
 
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -98,8 +94,7 @@
     const firebaseConfig = {
       apiKey: "AIzaSyDwmeumgDSVlspe7gIcF6rVbe-hBye7Q3I",
       authDomain: "school-scores-8e9eb.firebaseapp.com",
-      databaseURL:
-        "https://school-scores-8e9eb-default-rtdb.asia-southeast1.firebasedatabase.app",
+      databaseURL: "https://school-scores-8e9eb-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "school-scores-8e9eb",
       storageBucket: "school-scores-8e9eb.firebasestorage.app",
       messagingSenderId: "416720346956",
@@ -111,10 +106,19 @@
     const db = firebase.database();
 
     // =========================
-    // ✅ เฉพาะครูเท่านั้นแก้ได้
+    // ✅ สิทธิ์ครู
     // =========================
+    const TEACHER_KEY = "SNS_TEACHER_2026";
     function isTeacher() {
       return localStorage.getItem("isTeacher") === "1";
+    }
+
+    // ถ้าไม่ใช่ครู: ซ่อนหัวตาราง "แก้ไขคะแนน" เลย (ดูเนียน)
+    if (!isTeacher()) {
+      ["editHeadLate", "editHeadLine", "editHeadClean"].forEach(id => {
+        const th = document.getElementById(id);
+        if (th) th.style.display = "none";
+      });
     }
 
     // =========================
@@ -122,6 +126,7 @@
     // =========================
     const params = new URLSearchParams(window.location.search);
     const facultyName = (params.get("faculty") || "").trim();
+
     document.getElementById("facultyTitle").innerText =
       "คะแนนคณะสี " + (facultyName || "-");
 
@@ -150,39 +155,50 @@
     };
 
     // =========================
-    // Popup รูปภาพ
+    // Popup รูป
     // =========================
     function openImagePopup(src) {
       document.getElementById("popupImage").src = src;
       document.getElementById("imagePopup").style.display = "block";
     }
-
     function closePopup() {
       document.getElementById("imagePopup").style.display = "none";
     }
-
     window.openImagePopup = openImagePopup;
     window.closePopup = closePopup;
 
     // =========================
-    // ✅ แก้ไขคะแนน (ครูเท่านั้น)
+    // ✅ แก้ไขคะแนน (ครูเท่านั้น + ใส่ teacherKey เพื่อผ่าน Rules)
     // =========================
-    function editScore(key, oldValue) {
+    async function editScore(key, oldValue) {
       if (!isTeacher()) {
         alert("เฉพาะครูเท่านั้นที่แก้ไขคะแนนได้");
         return;
       }
 
-      const newValue = prompt("แก้ไขคะแนน:", oldValue);
-      if (newValue !== null && !isNaN(newValue)) {
-        db.ref("scores/" + key).update({ value: Number(newValue) });
+      const input = prompt("แก้ไขคะแนน:", oldValue);
+      if (input === null) return;
+
+      const newValue = Number(input);
+      if (!Number.isFinite(newValue) || newValue < 0) {
+        alert("กรุณากรอกตัวเลขที่ถูกต้อง (0 ขึ้นไป)");
+        return;
+      }
+
+      try {
+        await db.ref("scores/" + key).update({
+          value: newValue,
+          teacherKey: TEACHER_KEY  // ✅ สำคัญ: ให้ Rules อนุญาตการแก้ไข
+        });
         alert("แก้ไขคะแนนเรียบร้อยแล้ว ✅");
+      } catch (err) {
+        alert("แก้ไขไม่สำเร็จ: " + err.message);
       }
     }
     window.editScore = editScore;
 
     // =========================
-    // สรุปคะแนนรวมด้านล่าง
+    // สรุปคะแนนรวม
     // =========================
     function updateSummary() {
       const summaryBox = document.getElementById("summaryBox");
@@ -208,7 +224,7 @@
     }
 
     // =========================
-    // ดึงข้อมูลคะแนนจาก Firebase
+    // ดึงคะแนนจาก Firebase
     // =========================
     db.ref("scores").on("value", (snapshot) => {
       const data = snapshot.val() || {};
@@ -236,57 +252,70 @@
         const f = (item.faculty || "").trim();
         const v = Number(item.value) || 0;
 
+        // รวมข้อมูลมาสายทุกคณะเพื่อจัดอันดับ
         if (item.type === TYPE_LATE && FACULTIES.includes(f)) {
           lateCounts[f] += v;
           lateHasData[f] = true;
         }
 
+        // แสดงเฉพาะคณะที่เลือกใน URL
         if (!facultyName || f !== facultyName) continue;
 
-        // ✅ ปุ่มแก้ไข: ครูเท่านั้น
+        // ✅ แสดงปุ่มเฉพาะครู (นักเรียนซ่อนทั้งช่องเลย)
         const editCellHTML = isTeacher()
           ? `<button class="edit-btn" onclick="editScore('${key}', ${v})">แก้ไข</button>`
-          : `-`;
+          : ``; // ว่างไปเลย (จะซ่อน td ด้วยด้านล่าง)
+
+        const imageHTML = item.image
+          ? `<img src="${item.image}" class="activity-img" onclick="openImagePopup('${item.image}')">`
+          : "-";
+
+        // สร้าง row
+        const row = document.createElement("tr");
 
         if (item.type === TYPE_LATE) {
-          const row = document.createElement("tr");
           row.innerHTML = `
             <td>${item.time || "-"}</td>
             <td>${item.classroom || "-"}</td>
             <td>${v} คน</td>
-            <td>${item.image ? `<img src="${item.image}" class="activity-img" onclick="openImagePopup('${item.image}')">` : "-"}</td>
-            <td>${editCellHTML}</td>
+            <td>${imageHTML}</td>
+            <td class="edit-col">${editCellHTML || "-"}</td>
           `;
           lateTbody.appendChild(row);
 
         } else if (item.type === TYPE_LINEUP) {
           lineupTotalThis += v;
 
-          const row = document.createElement("tr");
           row.innerHTML = `
             <td>${item.time || "-"}</td>
             <td>${item.classroom || "-"}</td>
             <td>${v}</td>
-            <td>${item.image ? `<img src="${item.image}" class="activity-img" onclick="openImagePopup('${item.image}')">` : "-"}</td>
-            <td>${editCellHTML}</td>
+            <td>${imageHTML}</td>
+            <td class="edit-col">${editCellHTML || "-"}</td>
           `;
           lineTbody.appendChild(row);
 
         } else if (item.type === TYPE_CLEAN) {
           cleanTotalThis += v;
 
-          const row = document.createElement("tr");
           row.innerHTML = `
             <td>${item.time || "-"}</td>
             <td>${item.classroom || "-"}</td>
             <td>${v}</td>
-            <td>${item.image ? `<img src="${item.image}" class="activity-img" onclick="openImagePopup('${item.image}')">` : "-"}</td>
-            <td>${editCellHTML}</td>
+            <td>${imageHTML}</td>
+            <td class="edit-col">${editCellHTML || "-"}</td>
           `;
           cleanTbody.appendChild(row);
         }
+
+        // ถ้าไม่ใช่ครู: ซ่อนทั้งคอลัมน์ "แก้ไข" ของแถวนี้ (ไม่ให้เหลือ "-")
+        if (!isTeacher()) {
+          const td = row.querySelector(".edit-col");
+          if (td) td.style.display = "none";
+        }
       }
 
+      // คำนวณคะแนนมาสายแบบจัดอันดับ
       let lateScoreThis = 0;
       const hasAnyLateData = FACULTIES.some((f) => lateHasData[f] === true);
 
@@ -299,6 +328,7 @@
         lateScoreThis = LATE_RANK_SCORES[Math.min(idx, LATE_RANK_SCORES.length - 1)];
       }
 
+      // คะแนนความสะอาดเป็นค่าเฉลี่ยตามจำนวนห้อง
       const roomCount = CLASSROOMS[facultyName]?.length || 0;
       const cleanAvgThis = roomCount > 0 ? cleanTotalThis / roomCount : 0;
 

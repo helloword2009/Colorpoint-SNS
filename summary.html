@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>สรุปผลคณะยอดเยี่ยมประจำสัปดาห์</title>
-  <link rel="stylesheet" href="styles/summary.css">
+  <link rel="stylesheet" href="styles/summary.css?v=1">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
@@ -12,23 +12,7 @@
   </header>
 
   <main>
-    <!-- ✅ กล่องประกาศผู้ชนะ (จะไม่โดน JS ทับแล้ว) -->
-    <div id="winnerBox" class="winner-box">
-      <div class="winner-hero" id="winnerHero" style="display:none;">
-        <div class="trophy">🏆</div>
-
-        <div class="winner-text">
-          <div class="title">คณะสียอดเยี่ยมประจำสัปดาห์</div>
-          <div class="name" id="winnerName">-</div>
-          <div class="score" id="winnerScore">คะแนนรวม -</div>
-        </div>
-      </div>
-
-      <!-- ✅ ข้อความกรณียังไม่มีข้อมูล -->
-      <div id="winnerEmpty" class="winner-empty" style="display:none;">
-        ยังไม่มีข้อมูลคะแนนในสัปดาห์นี้
-      </div>
-    </div>
+    <div id="winnerBox" class="winner-box"></div>
 
     <table id="summaryTable">
       <thead>
@@ -49,193 +33,122 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDwmeumgDSVlspe7gIcF6rVbe-hBye7Q3I",
-      authDomain: "school-scores-8e9eb.firebaseapp.com",
-      databaseURL: "https://school-scores-8e9eb-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "school-scores-8e9eb",
-      storageBucket: "school-scores-8e9eb.firebasestorage.app",
-      messagingSenderId: "416720346956",
-      appId: "1:416720346956:web:b20e84af0b635b374279e9",
-      measurementId: "G-DD7E1RFNC1"
-    };
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDwmeumgDSVlspe7gIcF6rVbe-hBye7Q3I",
+    authDomain: "school-scores-8e9eb.firebaseapp.com",
+    databaseURL: "https://school-scores-8e9eb-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "school-scores-8e9eb",
+    storageBucket: "school-scores-8e9eb.firebasestorage.app",
+    messagingSenderId: "416720346956",
+    appId: "1:416720346956:web:b20e84af0b635b374279e9",
+    measurementId: "G-DD7E1RFNC1"
+  };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-    const FACULTIES = ["มาลัยพิรุณ","ไพจิตเวหาส","โอภาสรวี","จันทราอำไพ","รัศมีดารา"];
+  const FACULTIES = ["มาลัยพิรุณ","ไพจิตเวหาส","โอภาสรวี","จันทราอำไพ","รัศมีดารา"];
 
-    const CLASSROOMS = {
-      "มาลัยพิรุณ": ["1/4","1/9","2/5","2/10","3/1","3/6","3/11","4/1","4/6","4/11","5/2","5/12","6/2","6/7","6/12"],
-      "ไพจิตเวหาส": ["1/5","1/10","2/1","2/6","2/11","3/2","3/7","3/12","4/2","4/12","5/3","5/8","6/3","6/8","6/11"],
-      "โอภาสรวี": ["1/1","1/6","1/11","2/2","2/7","3/3","3/8","4/3","4/8","4/13","5/4","5/9","5/11","6/4","6/9"],
-      "จันทราอำไพ": ["1/3","1/8","1/13","2/4","2/9","3/5","3/10","4/5","4/7","4/10","5/1","5/6","6/5","6/6","6/13"],
-      "รัศมีดารา": ["1/2","1/7","1/12","2/3","2/8","2/13","3/4","3/9","4/4","4/9","5/5","5/7","5/10","5/13","6/1","6/10"]
-    };
+  const CLASSROOMS = {
+    "มาลัยพิรุณ": ["1/4","1/9","2/5","2/10","3/1","3/6","3/11","4/1","4/6","4/11","5/2","5/12","6/2","6/7","6/12"],
+    "ไพจิตเวหาส": ["1/5","1/10","2/1","2/6","2/11","3/2","3/7","3/12","4/2","4/12","5/3","5/8","6/3","6/8","6/11"],
+    "โอภาสรวี": ["1/1","1/6","1/11","2/2","2/7","3/3","3/8","4/3","4/8","4/13","5/4","5/9","5/11","6/4","6/9"],
+    "จันทราอำไพ": ["1/3","1/8","1/13","2/4","2/9","3/5","3/10","4/5","4/7","4/10","5/1","5/6","6/5","6/6","6/13"],
+    "รัศมีดารา": ["1/2","1/7","1/12","2/3","2/8","2/13","3/4","3/9","4/4","4/9","5/5","5/7","5/10","5/13","6/1","6/10"]
+  };
 
-    const TYPE_LATE = "คะแนนมาสาย";
-    const TYPE_LINEUP = "คะแนนการเข้าแถว";
-    const TYPE_CLEAN = "คะแนนความสะอาด";
-    const LATE_RANK_SCORES = [9, 8, 7, 6, 5];
+  const TYPE_LATE = "คะแนนมาสาย";
+  const TYPE_LINEUP = "คะแนนการเข้าแถว";
+  const TYPE_CLEAN = "คะแนนความสะอาด";
+  const LATE_RANK_SCORES = [9, 8, 7, 6, 5];
 
-    // =========================================================
-    // ✅ รีเซ็ตสัปดาห์แบบ "วันอาทิตย์ 00:00"
-    // =========================================================
-    function getSundayStartMs(now = new Date()) {
-      const d = new Date(now);
-      const day = d.getDay(); // 0 = อาทิตย์
-      d.setDate(d.getDate() - day);
-      d.setHours(0, 0, 0, 0);
-      return d.getTime();
-    }
+  db.ref("scores").on("value", (snapshot) => {
+    const data = snapshot.val() || {};
 
-    function makeHistoryKey() {
-      const pad = (n) => String(n).padStart(2, "0");
-      const d = new Date();
-      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
-    }
+    const totals = {};
+    const lateCounts = {};
+    const lateHasData = {};
+    const lineupTotals = {};
+    const cleanTotals = {};
 
-    async function weeklyResetIfNeeded() {
-      const currentWeekStart = getSundayStartMs();
+    FACULTIES.forEach(f => {
+      totals[f] = 0;
+      lateCounts[f] = 0;
+      lateHasData[f] = false;
+      lineupTotals[f] = 0;
+      cleanTotals[f] = 0;
+    });
 
-      const weekStartRef = db.ref("meta/weekStart");
+    // รวมคะแนนตามประเภท
+    for (const key in data) {
+      const item = data[key] || {};
+      const faculty = (item.faculty || "").trim();
+      if (!FACULTIES.includes(faculty)) continue;
 
-      // transaction กันรีซ้ำจากหลายคน
-      const tx = await weekStartRef.transaction((saved) => {
-        if (!saved) return currentWeekStart;
-        if (saved === currentWeekStart) return;
-        return currentWeekStart;
-      });
+      const val = Number(item.value) || 0;
 
-      if (!tx.committed) return;
-
-      // กันซ้ำในเครื่องเดียว
-      const localKey = "lastWeekStartSeen";
-      const lastSeen = Number(localStorage.getItem(localKey) || 0);
-      if (lastSeen === currentWeekStart) return;
-      localStorage.setItem(localKey, String(currentWeekStart));
-
-      // กันซ้ำทั้งระบบด้วย flag
-      const resetFlagRef = db.ref("meta/lastResetWeekStart");
-      const flagSnap = await resetFlagRef.get();
-      const lastResetWeekStart = flagSnap.val();
-
-      if (lastResetWeekStart === currentWeekStart) return;
-
-      // ย้าย scores ไป history แล้วล้าง
-      const scoresSnap = await db.ref("scores").get();
-      const scoresData = scoresSnap.val() || {};
-
-      const historyKey = makeHistoryKey();
-      await db.ref(`scores_history/${historyKey}`).set({
-        weekStart: currentWeekStart,
-        movedAt: Date.now(),
-        scores: scoresData
-      });
-
-      await db.ref("scores").remove();
-      await resetFlagRef.set(currentWeekStart);
-
-      console.log("✅ รีสัปดาห์ใหม่เรียบร้อย (เริ่มวันอาทิตย์ 00:00)");
-    }
-
-    // เรียกรีเซ็ตก่อนเริ่มฟัง scores
-    weeklyResetIfNeeded().catch(err => console.error("weeklyResetIfNeeded error:", err));
-
-    // =========================================================
-    // 🔻 โค้ดสรุปคะแนน
-    // =========================================================
-    db.ref("scores").on("value", (snapshot) => {
-      const data = snapshot.val() || {};
-
-      const totals = {};
-      const lateCounts = {};
-      const lateHasData = {};
-      const lineupTotals = {};
-      const cleanTotals = {};
-
-      FACULTIES.forEach(f => {
-        totals[f] = 0;
-        lateCounts[f] = 0;
-        lateHasData[f] = false;
-        lineupTotals[f] = 0;
-        cleanTotals[f] = 0;
-      });
-
-      for (const key in data) {
-        const item = data[key] || {};
-        const faculty = (item.faculty || "").trim();
-        if (!FACULTIES.includes(faculty)) continue;
-
-        const val = Number(item.value) || 0;
-
-        if (item.type === TYPE_LATE) {
-          lateCounts[faculty] += val;
-          lateHasData[faculty] = true;
-        } else if (item.type === TYPE_LINEUP) {
-          lineupTotals[faculty] += val;
-        } else if (item.type === TYPE_CLEAN) {
-          cleanTotals[faculty] += val;
-        }
+      if (item.type === TYPE_LATE) {
+        lateCounts[faculty] += val;
+        lateHasData[faculty] = true;
+      } else if (item.type === TYPE_LINEUP) {
+        lineupTotals[faculty] += val;
+      } else if (item.type === TYPE_CLEAN) {
+        cleanTotals[faculty] += val;
       }
+    }
 
-      // รวมคะแนนเข้าแถว + ความสะอาดเฉลี่ยตามจำนวนห้อง
-      FACULTIES.forEach(f => {
-        totals[f] += lineupTotals[f];
-        const roomCount = CLASSROOMS[f]?.length || 0;
-        totals[f] += roomCount > 0 ? (cleanTotals[f] / roomCount) : 0;
-      });
+    // คะแนนเข้าแถว + ความสะอาดเฉลี่ยตามจำนวนห้อง
+    FACULTIES.forEach(f => {
+      totals[f] += lineupTotals[f];
 
-      // จัดอันดับมาสาย + แจกคะแนน 9-5 เฉพาะกรณีมีข้อมูลมาสายจริง
+      const roomCount = CLASSROOMS[f]?.length || 0;
+      totals[f] += roomCount > 0 ? (cleanTotals[f] / roomCount) : 0;
+    });
+
+    // ✅ FIX สำคัญ: แจกคะแนน "มาสาย 9-5" เฉพาะเมื่อมีข้อมูลมาสายจริง
+    const hasAnyLateData = FACULTIES.some(f => lateHasData[f] === true);
+
+    if (hasAnyLateData) {
       const sortedByLate = FACULTIES
         .map(f => [f, lateHasData[f] ? lateCounts[f] : Number.POSITIVE_INFINITY])
         .sort((a, b) => a[1] - b[1]);
 
-      const hasAnyLateData = FACULTIES.some(f => lateHasData[f] === true);
-
-      if (hasAnyLateData) {
-        sortedByLate.forEach(([f], idx) => {
-          const lateScore = LATE_RANK_SCORES[Math.min(idx, LATE_RANK_SCORES.length - 1)];
-          totals[f] += lateScore;
-        });
-      }
-
-      // หา winner
-      let winner = null;
-      let maxScore = -Infinity;
-      FACULTIES.forEach(f => {
-        if (totals[f] > maxScore) {
-          maxScore = totals[f];
-          winner = f;
-        }
+      sortedByLate.forEach(([f], idx) => {
+        const lateScore = LATE_RANK_SCORES[Math.min(idx, LATE_RANK_SCORES.length - 1)];
+        totals[f] += lateScore;
       });
+    }
+    // ถ้าไม่มีข้อมูลมาสายเลย → ไม่บวกอะไรเพิ่ม (มาสาย = 0 ทุกคณะ)
 
-      // ✅ สำคัญ: ไม่ใช้ winnerBox.innerHTML ทับโครงอีกแล้ว
-      const winnerHero = document.getElementById("winnerHero");
-      const winnerEmpty = document.getElementById("winnerEmpty");
-
-      if (winner && isFinite(maxScore)) {
-        winnerHero.style.display = "flex";
-        winnerEmpty.style.display = "none";
-
-        document.getElementById("winnerName").innerText = winner;
-        document.getElementById("winnerScore").innerText = `คะแนนรวม ${maxScore.toFixed(2)} คะแนน`;
-      } else {
-        winnerHero.style.display = "none";
-        winnerEmpty.style.display = "block";
+    // หา winner
+    let winner = null;
+    let maxScore = -Infinity;
+    FACULTIES.forEach(f => {
+      if ((totals[f] || 0) > maxScore) {
+        maxScore = (totals[f] || 0);
+        winner = f;
       }
-
-      // เติมตาราง
-      const tbody = document.querySelector("#summaryTable tbody");
-      tbody.innerHTML = "";
-
-      FACULTIES.forEach(f => {
-        const row = document.createElement("tr");
-        row.innerHTML = `<td>${f}</td><td>${(totals[f] || 0).toFixed(2)}</td>`;
-        tbody.appendChild(row);
-      });
     });
-  </script>
+
+    const winnerBox = document.getElementById("winnerBox");
+    const hasAnyScoreData = Object.keys(data).length > 0;
+
+    if (hasAnyScoreData && winner && isFinite(maxScore)) {
+      winnerBox.innerHTML = `🏆 <strong>${winner}</strong> ได้เป็นคณะยอดเยี่ยมประจำสัปดาห์ ด้วยคะแนนรวม ${maxScore.toFixed(2)} คะแนน`;
+    } else {
+      winnerBox.innerHTML = "ยังไม่มีข้อมูลคะแนนในสัปดาห์นี้";
+    }
+
+    // เติมตาราง
+    const tbody = document.querySelector("#summaryTable tbody");
+    tbody.innerHTML = "";
+    FACULTIES.forEach(f => {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${f}</td><td>${(totals[f] || 0).toFixed(2)}</td>`;
+      tbody.appendChild(row);
+    });
+  });
+</script>
 </body>
 </html>
