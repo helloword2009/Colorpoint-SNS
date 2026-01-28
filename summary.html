@@ -14,19 +14,6 @@
   <main>
     <div id="winnerBox" class="winner-box"></div>
 
-    <!-- ✅ ปุ่มรีเซ็ตแบบ Manual (ครูเท่านั้น) -->
-    <div id="resetWrap" style="max-width:900px;margin:0 auto 14px;padding:0 12px;">
-      <button
-        id="resetWeekBtn"
-        style="width:100%;padding:12px 14px;border:none;border-radius:10px;background:#003366;color:#FFD700;font-weight:800;cursor:pointer;"
-        onclick="manualWeeklyReset()">
-        รีเซ็ตสัปดาห์ใหม่ (ย้ายข้อมูลไปประวัติ)
-      </button>
-      <p style="margin:8px 0 0;font-size:13px;color:#003366;">
-        * สำหรับครูเท่านั้น
-      </p>
-    </div>
-
     <table id="summaryTable">
       <thead>
         <tr>
@@ -75,85 +62,6 @@
   const TYPE_LINEUP = "คะแนนการเข้าแถว";
   const TYPE_CLEAN = "คะแนนความสะอาด";
   const LATE_RANK_SCORES = [9, 8, 7, 6, 5];
-
-  // =========================
-  // ✅ เช็กครู
-  // =========================
-  function isTeacher(){
-    return localStorage.getItem("isTeacher") === "1";
-  }
-
-  window.addEventListener("DOMContentLoaded", () => {
-    // ซ่อนปุ่มรีเซ็ตถ้าไม่ใช่ครู
-    if(!isTeacher()){
-      const wrap = document.getElementById("resetWrap");
-      if(wrap) wrap.style.display = "none";
-    }
-  });
-
-  // =========================
-  // ✅ รีเซ็ตสัปดาห์แบบ “กดปุ่ม” (ครูเท่านั้น)
-  // =========================
-  function makeHistoryKey() {
-    const pad = (n) => String(n).padStart(2, "0");
-    const d = new Date();
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
-  }
-
-  async function manualWeeklyReset(){
-    // กันนักเรียน
-    if(!isTeacher()){
-      alert("เฉพาะครูเท่านั้นที่รีเซ็ตสัปดาห์ได้");
-      return;
-    }
-
-    const ok = confirm(
-      "ยืนยันรีเซ็ตสัปดาห์ใหม่?\n" +
-      "ระบบจะย้ายข้อมูล /scores ไป /scores_history แล้วล้างคะแนนปัจจุบัน"
-    );
-    if(!ok) return;
-
-    const btn = document.getElementById("resetWeekBtn");
-    if(btn){
-      btn.disabled = true;
-      btn.style.opacity = "0.7";
-      btn.innerText = "กำลังรีเซ็ต...";
-    }
-
-    try{
-      const scoresSnap = await db.ref("scores").get();
-      const scoresData = scoresSnap.val() || {};
-
-      if(Object.keys(scoresData).length === 0){
-        alert("ยังไม่มีข้อมูลคะแนนให้รีเซ็ต");
-        return;
-      }
-
-      const historyKey = makeHistoryKey();
-
-      await db.ref(`scores_history/${historyKey}`).set({
-        movedAt: Date.now(),
-        scores: scoresData
-      });
-
-      await db.ref("scores").remove();
-
-      // (เสริม) บันทึกเวลาที่รีล่าสุดไว้ดูย้อนหลัง/กันงง
-      await db.ref("meta/lastResetAt").set(Date.now());
-
-      alert("✅ รีเซ็ตสัปดาห์ใหม่เรียบร้อย");
-    }catch(err){
-      alert("รีเซ็ตไม่สำเร็จ: " + err.message);
-    }finally{
-      if(btn){
-        btn.disabled = false;
-        btn.style.opacity = "1";
-        btn.innerText = "รีเซ็ตสัปดาห์ใหม่ (ย้ายข้อมูลไปประวัติ)";
-      }
-    }
-  }
-
-  window.manualWeeklyReset = manualWeeklyReset;
 
   // =========================
   // ✅ สรุปคะแนน (คำนวณใหม่ทุกครั้ง)

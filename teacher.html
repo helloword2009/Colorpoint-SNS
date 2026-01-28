@@ -87,6 +87,21 @@
         </table>
       </div>
     </section>
+
+    <!-- ✅ ปุ่มรีเซ็ตสัปดาห์ใหม่ (ครูเท่านั้น) -->
+    <div id="resetBox" style="margin-top:14px;">
+      <button
+        id="resetWeekBtn"
+        type="button"
+        class="btn danger"
+        onclick="manualWeeklyReset()">
+        รีเซ็ตสัปดาห์ใหม่ (ย้ายข้อมูลไปประวัติ)
+      </button>
+
+      <p class="note" style="margin-top:8px;opacity:.85;font-size:13px;">
+        ⚠️ คำเตือน: การรีเซ็ตจะย้ายข้อมูลคะแนนทั้งหมดไปประวัติ และล้างคะแนนปัจจุบันทั้งระบบ
+      </p>
+    </div>
   </main>
 
   <div id="imagePopup" onclick="closePopup()">
@@ -97,7 +112,8 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <script>
-    sessionStorage.setItem("fromTeacher", "1"); 
+    sessionStorage.setItem("fromTeacher", "1");
+
     // =========================
     // ✅ ตั้งค่าสิทธิ์ครู
     // =========================
@@ -131,6 +147,15 @@
     }
 
     document.getElementById("facultyName").innerText = faculty || "ไม่พบข้อมูลคณะ";
+
+    // =========================
+    // ✅ ซ่อนปุ่มรีเซ็ตสัปดาห์ใหม่ ถ้าไม่ใช่ครู (กันชั้น UI)
+    // =========================
+    (function(){
+      const isT = localStorage.getItem("isTeacher") === "1";
+      const box = document.getElementById("resetBox");
+      if (box && !isT) box.style.display = "none";
+    })();
 
     // =========================
     // ห้องเรียนของคณะ (มาจาก auth.js)
@@ -209,7 +234,6 @@
       const raw = scoreValueEl.value;
       const value = Number(raw);
 
-      // กันข้อมูลผิด
       if (!Number.isFinite(value) || value < 0) {
         alert("กรุณากรอกตัวเลขที่ถูกต้อง (0 ขึ้นไป)");
         return;
@@ -241,7 +265,7 @@
     });
 
     // =========================
-    // ประวัติการบันทึก (ติด listener ครั้งเดียว)
+    // ประวัติการบันทึก
     // =========================
     function renderHistory() {
       const tbody = document.querySelector("#historyTable tbody");
@@ -284,7 +308,6 @@
         const snap = await db.ref("scores").orderByChild("faculty").equalTo(faculty).once("value");
         const updates = {};
         snap.forEach((child) => {
-          // ลบแบบ multi-path เร็วกว่า remove ทีละอัน
           updates["scores/" + child.key] = null;
         });
         await db.ref().update(updates);
@@ -295,6 +318,71 @@
     }
 
     document.getElementById("resetBtn").addEventListener("click", resetHistory);
+
+    // =========================
+    // ✅ รีเซ็ตทั้งระบบ: ย้ายไปประวัติ + ล้าง scores
+    // =========================
+    function makeHistoryKey() {
+      const pad = (n) => String(n).padStart(2, "0");
+      const d = new Date();
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+    }
+
+    async function manualWeeklyReset(){
+      // กันไม่ใช่ครู
+      if (localStorage.getItem("isTeacher") !== "1") {
+        alert("เฉพาะครูเท่านั้นที่สามารถรีเซ็ตได้");
+        return;
+      }
+
+      const ok = confirm(
+        "⚠️ ยืนยันรีเซ็ตสัปดาห์ใหม่?\n\n" +
+        "- ระบบจะย้ายข้อมูลคะแนนทั้งหมดไปที่ประวัติ (scores_history)\n" +
+        "- แล้วล้างคะแนนปัจจุบันทั้งหมด (scores)\n\n" +
+        "กด OK เพื่อยืนยัน"
+      );
+      if(!ok) return;
+
+      const btn = document.getElementById("resetWeekBtn");
+      if (btn){
+        btn.disabled = true;
+        btn.style.opacity = "0.7";
+        btn.innerText = "กำลังรีเซ็ต...";
+      }
+
+      try{
+        const scoresSnap = await db.ref("scores").get();
+        const scoresData = scoresSnap.val() || {};
+
+        if(Object.keys(scoresData).length === 0){
+          alert("ยังไม่มีข้อมูลคะแนนให้รีเซ็ต");
+          return;
+        }
+
+        const historyKey = makeHistoryKey();
+
+        await db.ref(`scores_history/${historyKey}`).set({
+          movedAt: Date.now(),
+          movedAtText: new Date().toLocaleString("th-TH"),
+          byFaculty: faculty || "teacher",
+          scores: scoresData
+        });
+
+        await db.ref("scores").remove();
+
+        alert("✅ รีเซ็ตสัปดาห์ใหม่เรียบร้อยแล้ว");
+      }catch(err){
+        alert("รีเซ็ตไม่สำเร็จ: " + err.message);
+      }finally{
+        if (btn){
+          btn.disabled = false;
+          btn.style.opacity = "1";
+          btn.innerText = "รีเซ็ตสัปดาห์ใหม่ (ย้ายข้อมูลไปประวัติ)";
+        }
+      }
+    }
+
+    window.manualWeeklyReset = manualWeeklyReset;
 
     // =========================
     // Popup รูป
@@ -316,8 +404,6 @@
     // =========================
     function logoutTeacher() {
       localStorage.removeItem("isTeacher");
-      // ถ้าต้องการล้างคณะด้วย ให้เปิดบรรทัดนี้
-      // localStorage.removeItem("currentFaculty");
       window.location.href = "role.html";
     }
 
