@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard คะแนนคณะสี</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles/dashboard.css"/>
+</head>
+
+<body>
+  <header class="topbar">
+    <h1>📊 Dashboard คะแนนคณะสี</h1>
+    <p class="subtitle">ภาพรวมคะแนนทั้งหมด (อัปเดตจาก Firebase แบบเรียลไทม์)</p>
+  </header>
+
+  <main class="container">
+
+    <!-- กราฟ -->
+    <section class="card" style="margin-bottom:16px;">
+      <h2>📈 กราฟคะแนนรวม (เรียลไทม์)</h2>
+      <div class="chart-wrap">
+        <canvas id="totalChart"></canvas>
+      </div>
+    </section>
+
+    <section class="card" style="margin-bottom:16px;">
+      <h2>🏆 แนวโน้ม “ผู้ชนะรายวัน” (นับครั้งที่ได้คะแนนรวมสูงสุดในแต่ละวัน)</h2>
+      <div class="chart-wrap">
+        <canvas id="winnerTrendChart"></canvas>
+      </div>
+      <p style="margin-top:10px;opacity:.8;font-size:13px;">
+        * กราฟนี้ใช้ข้อมูลจาก field <code>time</code> ในแต่ละรายการคะแนน (รูปแบบ th-TH)
+      </p>
+    </section>
+
+    <!-- ตารางสรุป -->
+    <section class="card">
+      <h2>📋 ตารางคะแนนรวม</h2>
+      <div class="table-wrapper">
+        <table id="dashboardTable">
+          <thead>
+            <tr>
+              <th>อันดับ</th>
+              <th>คณะสี</th>
+              <th>มาสาย</th>
+              <th>เข้าแถว</th>
+              <th>ความสะอาด</th>
+              <th>คะแนนรวม</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>© โรงเรียนสตรีนครสวรรค์</p>
+  </footer>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDwmeumgDSVlspe7gIcF6rVbe-hBye7Q3I",
+    authDomain: "school-scores-8e9eb.firebaseapp.com",
+    databaseURL: "https://school-scores-8e9eb-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "school-scores-8e9eb",
+    storageBucket: "school-scores-8e9eb.firebasestorage.app",
+    messagingSenderId: "416720346956",
+    appId: "1:416720346956:web:b20e84af0b635b374279e9"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const FACULTIES = ["มาลัยพิรุณ","ไพจิตเวหาส","โอภาสรวี","จันทราอำไพ","รัศมีดารา"];
+
+  // ✅ สีประจำคณะ (ตามที่คุณบอก)
+  const FACULTY_COLORS = {
+    "มาลัยพิรุณ":  { bg: "rgba(0,51,102,0.75)", border: "#003366" }, // น้ำเงิน
+    "จันทราอำไพ": { bg: "rgba(255,215,0,0.70)", border: "#FFD700" }, // เหลือง
+    "ไพจิตเวหาส": { bg: "rgba(46,204,113,0.70)", border: "#2ecc71" }, // เขียว
+    "รัศมีดารา":  { bg: "rgba(52,152,219,0.70)", border: "#3498db" }, // ฟ้า
+    "โอภาสรวี":   { bg: "rgba(231,76,60,0.70)",  border: "#e74c3c" }  // แดง
+  };
+
+  const CLASSROOMS = {
+    "มาลัยพิรุณ": ["1/4","1/9","2/5","2/10","3/1","3/6","3/11","4/1","4/6","4/11","5/2","5/12","6/2","6/7","6/12"],
+    "ไพจิตเวหาส": ["1/5","1/10","2/1","2/6","2/11","3/2","3/7","3/12","4/2","4/12","5/3","5/8","6/3","6/8","6/11"],
+    "โอภาสรวี": ["1/1","1/6","1/11","2/2","2/7","3/3","3/8","4/3","4/8","4/13","5/4","5/9","5/11","6/4","6/9"],
+    "จันทราอำไพ": ["1/3","1/8","1/13","2/4","2/9","3/5","3/10","4/5","4/7","4/10","5/1","5/6","6/5","6/6","6/13"],
+    "รัศมีดารา": ["1/2","1/7","1/12","2/3","2/8","2/13","3/4","3/9","4/4","4/9","5/5","5/7","5/10","5/13","6/1","6/10"]
+  };
+
+  const TYPE_LATE   = "คะแนนมาสาย";
+  const TYPE_LINEUP = "คะแนนการเข้าแถว";
+  const TYPE_CLEAN  = "คะแนนความสะอาด";
+  const LATE_RANK_SCORES = [9, 8, 7, 6, 5];
+
+  let totalChartInstance = null;
+  let winnerTrendInstance = null;
+
+  function renderTotalChart(totals){
+    const canvas = document.getElementById("totalChart");
+    if(!canvas) return;
+
+    const labels = FACULTIES.slice();
+    const values = labels.map(f => Number(totals[f]?.total || 0));
+
+    const bgColors = labels.map(f => (FACULTY_COLORS[f]?.bg) || "rgba(0,51,102,0.7)");
+    const borderColors = labels.map(f => (FACULTY_COLORS[f]?.border) || "#003366");
+
+    if(totalChartInstance) totalChartInstance.destroy();
+
+    totalChartInstance = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{
+          label: "คะแนนรวม",
+          data: values,
+          backgroundColor: bgColors,
+          borderColor: borderColors,
+          borderWidth: 2,
+          borderRadius: 10
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+  }
+
+  function parseThaiDateKey(thTime){
+    if(!thTime || typeof thTime !== "string") return null;
+    const parts = thTime.split(" ");
+    if(parts.length < 1) return null;
+
+    const dmy = parts[0].split("/");
+    if(dmy.length !== 3) return null;
+
+    const d = parseInt(dmy[0],10);
+    const m = parseInt(dmy[1],10);
+    let y = parseInt(dmy[2],10);
+
+    if(!Number.isFinite(d) || !Number.isFinite(m) || !Number.isFinite(y)) return null;
+    if(y > 2400) y = y - 543;
+
+    const pad = (n)=> String(n).padStart(2,"0");
+    return `${y}-${pad(m)}-${pad(d)}`;
+  }
+
+  function renderWinnerTrendFromRaw(data){
+    const dayBuckets = {};
+
+    for(const key in data){
+      const item = data[key] || {};
+      const f = (item.faculty || "").trim();
+      if(!FACULTIES.includes(f)) continue;
+
+      const dayKey = parseThaiDateKey(item.time);
+      if(!dayKey) continue;
+
+      if(!dayBuckets[dayKey]){
+        dayBuckets[dayKey] = {};
+        FACULTIES.forEach(ff=>{
+          dayBuckets[dayKey][ff] = { lateRaw:0, lineup:0, cleanRaw:0 };
+        });
+      }
+
+      const v = Number(item.value) || 0;
+      if(item.type === TYPE_LATE) dayBuckets[dayKey][f].lateRaw += v;
+      else if(item.type === TYPE_LINEUP) dayBuckets[dayKey][f].lineup += v;
+      else if(item.type === TYPE_CLEAN) dayBuckets[dayKey][f].cleanRaw += v;
+    }
+
+    const dayKeys = Object.keys(dayBuckets).sort();
+    const winnerCount = {};
+    FACULTIES.forEach(f=> winnerCount[f]=0);
+
+    dayKeys.forEach(dayKey=>{
+      const bucket = dayBuckets[dayKey];
+
+      const lateHas = {};
+      const lateCounts = {};
+      FACULTIES.forEach(f=>{
+        lateCounts[f] = bucket[f].lateRaw || 0;
+        lateHas[f] = (bucket[f].lateRaw || 0) > 0;
+      });
+
+      const lateScore = {};
+      FACULTIES.forEach(f=> lateScore[f]=0);
+
+      const hasAnyLate = FACULTIES.some(f=> lateHas[f] === true);
+      if(hasAnyLate){
+        const withLate = FACULTIES
+          .filter(f=> lateHas[f] === true)
+          .map(f=> [f, lateCounts[f]])
+          .sort((a,b)=> a[1]-b[1]);
+
+        withLate.forEach(([f], idx)=>{
+          lateScore[f] = LATE_RANK_SCORES[Math.min(idx, LATE_RANK_SCORES.length-1)];
+        });
+      }
+
+      const totals = {};
+      FACULTIES.forEach(f=>{
+        const roomCount = CLASSROOMS[f]?.length || 0;
+        const cleanAvg = roomCount > 0 ? (Number(bucket[f].cleanRaw||0) / roomCount) : 0;
+        totals[f] =
+          Number(lateScore[f]||0) +
+          Number(bucket[f].lineup||0) +
+          Number(cleanAvg||0);
+      });
+
+      let winner = null;
+      let max = -Infinity;
+      FACULTIES.forEach(f=>{
+        const score = Number(totals[f]||0);
+        if(score > max){
+          max = score;
+          winner = f;
+        }
+      });
+      if(winner) winnerCount[winner] += 1;
+    });
+
+    const canvas = document.getElementById("winnerTrendChart");
+    if(!canvas) return;
+
+    const labels = FACULTIES.slice();
+    const values = labels.map(f=> Number(winnerCount[f]||0));
+
+    const bgColors = labels.map(f => (FACULTY_COLORS[f]?.bg) || "rgba(0,51,102,0.7)");
+    const borderColors = labels.map(f => (FACULTY_COLORS[f]?.border) || "#003366");
+
+    if(winnerTrendInstance) winnerTrendInstance.destroy();
+
+    winnerTrendInstance = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{
+          label: "จำนวนครั้งที่เป็นอันดับ 1 (รายวัน)",
+          data: values,
+          backgroundColor: bgColors,
+          borderColor: borderColors,
+          borderWidth: 2,
+          borderRadius: 10
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    });
+  }
+
+  db.ref("scores").on("value", snapshot => {
+    const data = snapshot.val() || {};
+
+    const lineupTotals = {};
+    const cleanTotals = {};
+    const lateCounts = {};
+    const lateHasData = {};
+
+    FACULTIES.forEach(f => {
+      lineupTotals[f] = 0;
+      cleanTotals[f] = 0;
+      lateCounts[f] = 0;
+      lateHasData[f] = false;
+    });
+
+    for (const key in data) {
+      const item = data[key] || {};
+      const f = (item.faculty || "").trim();
+      if (!FACULTIES.includes(f)) continue;
+
+      const v = Number(item.value) || 0;
+
+      if (item.type === TYPE_LATE) {
+        lateCounts[f] += v;
+        lateHasData[f] = true;
+      } else if (item.type === TYPE_LINEUP) {
+        lineupTotals[f] += v;
+      } else if (item.type === TYPE_CLEAN) {
+        cleanTotals[f] += v;
+      }
+    }
+
+    const cleanAvg = {};
+    FACULTIES.forEach(f => {
+      const roomCount = CLASSROOMS[f]?.length || 0;
+      cleanAvg[f] = roomCount > 0 ? (cleanTotals[f] / roomCount) : 0;
+    });
+
+    const lateScore = {};
+    FACULTIES.forEach(f => lateScore[f] = 0);
+
+    const hasAnyLateData = FACULTIES.some(f => lateHasData[f] === true);
+    if (hasAnyLateData) {
+      const withLate = FACULTIES
+        .filter(f => lateHasData[f] === true)
+        .map(f => [f, lateCounts[f]])
+        .sort((a,b) => a[1] - b[1]);
+
+      withLate.forEach(([f], idx) => {
+        lateScore[f] = LATE_RANK_SCORES[Math.min(idx, LATE_RANK_SCORES.length - 1)];
+      });
+    }
+
+    const totals = {};
+    FACULTIES.forEach(f => {
+      const total =
+        (Number(lateScore[f]) || 0) +
+        (Number(lineupTotals[f]) || 0) +
+        (Number(cleanAvg[f]) || 0);
+
+      totals[f] = {
+        late: lateScore[f],
+        lineup: lineupTotals[f],
+        clean: cleanAvg[f],
+        total: total
+      };
+    });
+
+    renderTable(totals);
+
+    // วาดกราฟ (ถ้าลบข้อมูล -> data={} -> totals เป็น 0 ทั้งหมด -> กราฟอัปเดตเป็น 0)
+    renderTotalChart(totals);
+    renderWinnerTrendFromRaw(data);
+  });
+
+  function renderTable(totals){
+    const tbody = document.querySelector("#dashboardTable tbody");
+    tbody.innerHTML = "";
+
+    const sorted = Object.entries(totals)
+      .sort((a,b) => (b[1].total || 0) - (a[1].total || 0));
+
+    sorted.forEach(([f, v], idx) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${idx + 1}</td>
+        <td>${f}</td>
+        <td>${Number(v.late || 0).toFixed(2)}</td>
+        <td>${Number(v.lineup || 0).toFixed(2)}</td>
+        <td>${Number(v.clean || 0).toFixed(2)}</td>
+        <td><strong>${Number(v.total || 0).toFixed(2)}</strong></td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+  </script>
+
+</body>
+</html>

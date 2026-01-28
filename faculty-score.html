@@ -106,15 +106,22 @@
     const db = firebase.database();
 
     // =========================
-    // ✅ สิทธิ์ครู
+    // ✅ สิทธิ์แก้ไข: ต้องเป็นครู + ต้องเข้ามาจากหน้า teacher.html ในแท็บเดียวกัน
     // =========================
     const TEACHER_KEY = "SNS_TEACHER_2026";
-    function isTeacher() {
+
+    function isTeacherFlag() {
       return localStorage.getItem("isTeacher") === "1";
     }
+    function cameFromTeacher() {
+      return sessionStorage.getItem("fromTeacher") === "1";
+    }
+    function canEdit() {
+      return isTeacherFlag() && cameFromTeacher();
+    }
 
-    // ถ้าไม่ใช่ครู: ซ่อนหัวตาราง "แก้ไขคะแนน" เลย (ดูเนียน)
-    if (!isTeacher()) {
+    // ถ้าแก้ไขไม่ได้: ซ่อนหัวตาราง "แก้ไขคะแนน" ให้เนียน
+    if (!canEdit()) {
       ["editHeadLate", "editHeadLine", "editHeadClean"].forEach(id => {
         const th = document.getElementById(id);
         if (th) th.style.display = "none";
@@ -168,11 +175,11 @@
     window.closePopup = closePopup;
 
     // =========================
-    // ✅ แก้ไขคะแนน (ครูเท่านั้น + ใส่ teacherKey เพื่อผ่าน Rules)
+    // ✅ แก้ไขคะแนน (ต้อง canEdit เท่านั้น)
     // =========================
     async function editScore(key, oldValue) {
-      if (!isTeacher()) {
-        alert("เฉพาะครูเท่านั้นที่แก้ไขคะแนนได้");
+      if (!canEdit()) {
+        alert("เฉพาะครูที่เข้าผ่านหน้าครูเท่านั้นที่แก้ไขคะแนนได้");
         return;
       }
 
@@ -188,7 +195,7 @@
       try {
         await db.ref("scores/" + key).update({
           value: newValue,
-          teacherKey: TEACHER_KEY  // ✅ สำคัญ: ให้ Rules อนุญาตการแก้ไข
+          teacherKey: TEACHER_KEY
         });
         alert("แก้ไขคะแนนเรียบร้อยแล้ว ✅");
       } catch (err) {
@@ -237,6 +244,7 @@
       lineTbody.innerHTML = "";
       cleanTbody.innerHTML = "";
 
+      // ✅ นับมาสายทั่วทั้งระบบ (เพื่อจัดอันดับ)
       const lateCounts = {};
       const lateHasData = {};
       FACULTIES.forEach((f) => {
@@ -252,7 +260,7 @@
         const f = (item.faculty || "").trim();
         const v = Number(item.value) || 0;
 
-        // รวมข้อมูลมาสายทุกคณะเพื่อจัดอันดับ
+        // เก็บข้อมูลมาสายทุกคณะ
         if (item.type === TYPE_LATE && FACULTIES.includes(f)) {
           lateCounts[f] += v;
           lateHasData[f] = true;
@@ -261,16 +269,15 @@
         // แสดงเฉพาะคณะที่เลือกใน URL
         if (!facultyName || f !== facultyName) continue;
 
-        // ✅ แสดงปุ่มเฉพาะครู (นักเรียนซ่อนทั้งช่องเลย)
-        const editCellHTML = isTeacher()
-          ? `<button class="edit-btn" onclick="editScore('${key}', ${v})">แก้ไข</button>`
-          : ``; // ว่างไปเลย (จะซ่อน td ด้วยด้านล่าง)
-
         const imageHTML = item.image
           ? `<img src="${item.image}" class="activity-img" onclick="openImagePopup('${item.image}')">`
           : "-";
 
-        // สร้าง row
+        // ✅ ปุ่มแก้ไข: เฉพาะ canEdit()
+        const editCellHTML = canEdit()
+          ? `<button class="edit-btn" onclick="editScore('${key}', ${v})">แก้ไข</button>`
+          : "";
+
         const row = document.createElement("tr");
 
         if (item.type === TYPE_LATE) {
@@ -285,7 +292,6 @@
 
         } else if (item.type === TYPE_LINEUP) {
           lineupTotalThis += v;
-
           row.innerHTML = `
             <td>${item.time || "-"}</td>
             <td>${item.classroom || "-"}</td>
@@ -297,7 +303,6 @@
 
         } else if (item.type === TYPE_CLEAN) {
           cleanTotalThis += v;
-
           row.innerHTML = `
             <td>${item.time || "-"}</td>
             <td>${item.classroom || "-"}</td>
@@ -308,27 +313,33 @@
           cleanTbody.appendChild(row);
         }
 
-        // ถ้าไม่ใช่ครู: ซ่อนทั้งคอลัมน์ "แก้ไข" ของแถวนี้ (ไม่ให้เหลือ "-")
-        if (!isTeacher()) {
+        // ✅ ถ้าแก้ไขไม่ได้: ซ่อนทั้งคอลัมน์แก้ไข (ทั้ง td) ไม่ให้เห็น "-" ด้วย
+        if (!canEdit()) {
           const td = row.querySelector(".edit-col");
           if (td) td.style.display = "none";
         }
       }
 
-      // คำนวณคะแนนมาสายแบบจัดอันดับ
+      // =========================
+      // ✅ FIX: คะแนนมาสายแบบ 9–5 (เฉพาะคณะที่มีการกรอกมาสายจริง)
+      // =========================
       let lateScoreThis = 0;
-      const hasAnyLateData = FACULTIES.some((f) => lateHasData[f] === true);
 
-      if (hasAnyLateData && FACULTIES.includes(facultyName)) {
-        const sortedByLate = FACULTIES
-          .map((f) => [f, lateHasData[f] ? lateCounts[f] : Number.POSITIVE_INFINITY])
+      const hasAnyLateData = FACULTIES.some((f) => lateHasData[f] === true);
+      const thisFacultyHasLate = !!lateHasData[facultyName];
+
+      if (hasAnyLateData && thisFacultyHasLate) {
+        const withLate = FACULTIES
+          .filter((f) => lateHasData[f] === true)
+          .map((f) => [f, lateCounts[f]])
           .sort((a, b) => a[1] - b[1]);
 
-        const idx = sortedByLate.findIndex(([f]) => f === facultyName);
-        lateScoreThis = LATE_RANK_SCORES[Math.min(idx, LATE_RANK_SCORES.length - 1)];
+        const idx = withLate.findIndex(([f]) => f === facultyName);
+        if (idx >= 0) {
+          lateScoreThis = LATE_RANK_SCORES[Math.min(idx, LATE_RANK_SCORES.length - 1)];
+        }
       }
 
-      // คะแนนความสะอาดเป็นค่าเฉลี่ยตามจำนวนห้อง
       const roomCount = CLASSROOMS[facultyName]?.length || 0;
       const cleanAvgThis = roomCount > 0 ? cleanTotalThis / roomCount : 0;
 
